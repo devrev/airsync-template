@@ -1,4 +1,4 @@
-import { ExternalSystemAttachment, ExternalSystemItem } from '@devrev/ts-adaas';
+import { ExternalSystemAttachment, ExternalSystemItem } from '@devrev/airsync-sdk';
 import { ExternalAttachment, ExternalTodo } from './types';
 
 export function denormalizeTodo(item: ExternalSystemItem): ExternalTodo {

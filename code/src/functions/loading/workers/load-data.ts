@@ -2,9 +2,8 @@ import {
   ExternalSystemItem,
   ExternalSystemItemLoadingParams,
   ExternalSystemItemLoadingResponse,
-  LoaderEventType,
-  processTask,
-} from '@devrev/ts-adaas';
+  processLoadingTask,
+} from '@devrev/airsync-sdk';
 
 import { denormalizeTodo } from '../../external-system/data-denormalization';
 import { HttpClient } from '../../external-system/http-client';
@@ -50,7 +49,7 @@ async function updateTodo({
   //   sync_unit: event.payload.event_context.sync_unit,
   //   target: item.id.devrev,
   // });
-  // const todoExternalId = syncMapperRecordResponse.data.sync_mapper_record.external_ids[0];
+  // const todoExternalId = syncMapperRecordResponse.sync_mapper_record.external_ids[0];
 
   const todo = denormalizeTodo(item);
 
@@ -58,9 +57,9 @@ async function updateTodo({
   return updateTodoResponse;
 }
 
-processTask<LoaderState>({
+processLoadingTask<LoaderState>({
   task: async ({ adapter }) => {
-    const { reports, processed_files } = await adapter.loadItemTypes({
+    return adapter.loadItemTypes({
       itemTypesToLoad: [
         {
           itemType: 'todos',
@@ -68,17 +67,6 @@ processTask<LoaderState>({
           update: updateTodo,
         },
       ],
-    });
-
-    await adapter.emit(LoaderEventType.DataLoadingDone, {
-      reports,
-      processed_files,
-    });
-  },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(LoaderEventType.DataLoadingProgress, {
-      reports: adapter.reports,
-      processed_files: adapter.processedFiles,
     });
   },
 });

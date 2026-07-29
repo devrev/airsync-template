@@ -1,14 +1,13 @@
 import {
   AirSyncDefaultItemTypes,
   ExternalSyncUnit,
-  ExtractorEventType,
-  processTask,
-} from '@devrev/ts-adaas';
+  processExtractionTask,
+} from '@devrev/airsync-sdk';
 
 import { normalizeTodoList } from '../../external-system/data-normalization';
 import { HttpClient } from '../../external-system/http-client';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     adapter.initializeRepos([
       {
@@ -36,13 +35,12 @@ processTask({
       .getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)
       ?.push(externalSyncUnits);
 
-    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone);
+    return { status: 'success' };
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionError, {
-      error: {
-        message: 'Failed to extract external sync units. Lambda timeout.',
-      },
-    });
-  },
+  onTimeout: async () => ({
+    status: 'error',
+    error: {
+      message: 'Failed to extract external sync units. Lambda timeout.',
+    },
+  }),
 });

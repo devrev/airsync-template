@@ -1,4 +1,4 @@
-import { AirdropEvent, ExternalSystemItemLoadingResponse } from '@devrev/ts-adaas';
+import { AirSyncEvent, ExternalSystemItemLoadingResponse } from '@devrev/airsync-sdk';
 import { ExternalAttachment, ExternalTodo, ExternalTodoList, ExternalUser } from './types';
 
 // ---------------------------------------------------------------------------
@@ -85,7 +85,7 @@ export class HttpClient {
   private apiEndpoint: string;
   private apiToken: string;
 
-  constructor(event: AirdropEvent) {
+  constructor(event: AirSyncEvent) {
     // TODO: Replace with the API endpoint of the external system. This is
     // passed through the event payload (e.g. event.payload.connection_data.org_id
     // or a keyring subdomain field).

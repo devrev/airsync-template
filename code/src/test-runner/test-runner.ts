@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { AirdropEvent, createMockEvent, DeepPartial, EventType, MockServer } from '@devrev/ts-adaas';
+import { AirSyncEvent, createMockEvent, DeepPartial, EventType, MockServer } from '@devrev/airsync-sdk';
 
 import { functionFactory, FunctionFactoryType } from '../function-factory';
 
@@ -72,7 +72,7 @@ async function runWithFixtureDir(fixturesDir: string, functionName?: FunctionFac
   const statePath = path.join(fixturesDir, 'state.json');
   const extractionScopePath = path.join(fixturesDir, 'extraction_scope.json');
 
-  const fixtureEvent = readFixtureFile<DeepPartial<AirdropEvent>>(eventPath);
+  const fixtureEvent = readFixtureFile<DeepPartial<AirSyncEvent>>(eventPath);
   const fixtureState = readFixtureFile<Record<string, unknown>>(statePath);
   const fixtureExtractionScope = readFixtureFile<Record<string, unknown>>(extractionScopePath);
 
