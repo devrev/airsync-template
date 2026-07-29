@@ -1,4 +1,4 @@
-import { ExtractorEventType, processTask } from '@devrev/ts-adaas';
+import { processExtractionTask } from '@devrev/airsync-sdk';
 
 import { normalizeAttachment, normalizeTodo, normalizeUser } from '../../external-system/data-normalization';
 import { HttpClient } from '../../external-system/http-client';
@@ -48,7 +48,7 @@ const itemTypesToExtract: ItemTypeToExtract[] = [
   },
 ];
 
-processTask<ExtractorState>({
+processExtractionTask<ExtractorState>({
   task: async ({ adapter }) => {
     adapter.initializeRepos(repos);
 
@@ -60,9 +60,9 @@ processTask<ExtractorState>({
     // system. This is just an example how you can iterate over the item types,
     // extract them, push them to the repo, and save the state.
     for (const itemTypeToExtract of itemTypesToExtract) {
-      // If the worker is about to time out, exit early so that `onTimeout` can run and emit progress.
+      // If the worker is about to time out, hand off for continuation.
       if (adapter.isTimeout) {
-        return;
+        return { status: 'progress' };
       }
 
       if (!adapter.shouldExtract(itemTypeToExtract.name)) {
@@ -75,9 +75,6 @@ processTask<ExtractorState>({
       adapter.state[itemTypeToExtract.name].completed = true;
     }
 
-    await adapter.emit(ExtractorEventType.DataExtractionDone);
-  },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+    return { status: 'success' };
   },
 });

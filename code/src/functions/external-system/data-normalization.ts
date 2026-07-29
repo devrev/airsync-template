@@ -1,4 +1,4 @@
-import { ExternalSyncUnit, NormalizedAttachment, NormalizedItem } from '@devrev/ts-adaas';
+import { ExternalSyncUnit, NormalizedAttachment, NormalizedItem } from '@devrev/airsync-sdk';
 import { ExternalAttachment, ExternalTodo, ExternalTodoList, ExternalUser } from './types';
 
 // TODO: Replace with your actual normalization functions that will be used to
