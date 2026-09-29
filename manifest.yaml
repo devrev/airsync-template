@@ -27,6 +27,9 @@ service_account:
       - scope: sync_snap_in:all
         optional: false
         reason: "Allow all access to sync snap ins"
+      - scope: sync_history:read
+        optional: false
+        reason: "Allow read access to sync history"
 
 # Functions that the snap-in exposes.
 # The names of the functions should be in sync with their references in the 'imports' and
