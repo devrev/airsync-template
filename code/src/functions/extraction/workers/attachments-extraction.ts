@@ -17,9 +17,9 @@ async function getFileStream({
   try {
     const fileStreamResponse = await axios.get(url, {
       responseType: 'stream',
+      timeout: 30000,
       headers: {
         'Accept-Encoding': 'identity',
-        timeout: 30000,
       },
     });
 
@@ -27,16 +27,19 @@ async function getFileStream({
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error?.response?.status === 429) {
-        const retryAfter = error.response?.headers['retry-after'];
-        return { status: 'delay', delaySeconds: Number(retryAfter) };
-      } else {
-        return {
-          status: 'error',
-          error: {
-            message: `Error while fetching attachment ${id} from URL. Error code: ${error.response?.status}. Error message: ${error.response?.data.message}.`,
-          },
-        };
+        const retryAfter = String(error.response?.headers['retry-after'] ?? '').trim();
+        const delaySeconds = Number(retryAfter);
+        if (retryAfter && Number.isFinite(delaySeconds) && delaySeconds >= 0) {
+          return { status: 'delay', delaySeconds };
+        }
       }
+
+      return {
+        status: 'error',
+        error: {
+          message: `Error while fetching attachment ${id} from URL. Error code: ${error.response?.status}. Error message: ${error.response?.data?.message || error.message}.`,
+        },
+      };
     }
 
     return {
