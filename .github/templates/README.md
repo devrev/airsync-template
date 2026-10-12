@@ -6,7 +6,7 @@ Syncs data between Todo and DevRev using DevRev's AirSync platform.
 
 Install the following tools:
 
-- [Node.js](https://nodejs.org/en/download/)
+- [Node.js 20 or newer](https://nodejs.org/en/download/)
 - [DevRev CLI](https://developer.devrev.ai/snapin-development/references/cli-install)
 - [jq](https://jqlang.github.io/jq/download/)
 - [ngrok](https://ngrok.com/download) (for local development)
@@ -39,6 +39,9 @@ USER_EMAIL=my@email.com
 ```
 
 These values will be used as defaults when the scripts prompt you for credentials.
+
+The connector uses `@devrev/airsync-sdk`. Its local test server sets
+`AIRSYNC_LOCAL_DEVELOPMENT=1` to enable local logging and artifact copies.
 
 ## Deploy
 

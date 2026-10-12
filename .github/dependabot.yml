@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: "weekly"
     allow:
-      - dependency-name: "@devrev/ts-adaas"
+      - dependency-name: "@devrev/airsync-sdk"
     labels:
       - "dependencies"
       - "marketplace-submission"

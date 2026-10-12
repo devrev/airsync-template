@@ -1,4 +1,4 @@
-import { AirdropEvent, spawn } from '@devrev/ts-adaas';
+import { AirSyncEvent, spawn } from '@devrev/airsync-sdk';
 
 import initialDomainMapping from '../external-system/initial_domain_mapping.json';
 
@@ -11,7 +11,7 @@ export interface LoaderState {}
 // This state will be used as a starting point for the loading process.
 export const initialLoaderState: LoaderState = {};
 
-const run = async (events: AirdropEvent[]) => {
+const run = async (events: AirSyncEvent[]) => {
   for (const event of events) {
     await spawn<LoaderState>({
       event,

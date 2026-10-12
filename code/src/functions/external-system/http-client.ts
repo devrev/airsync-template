@@ -1,4 +1,4 @@
-import { AirdropEvent, ExternalSystemItemLoadingResponse } from '@devrev/ts-adaas';
+import { AirSyncEvent, ExternalSystemItemLoadingResponse } from '@devrev/airsync-sdk';
 import { ExternalAttachment, ExternalTodo, ExternalTodoList, ExternalUser } from './types';
 
 // ---------------------------------------------------------------------------
@@ -85,7 +85,7 @@ export class HttpClient {
   private apiEndpoint: string;
   private apiToken: string;
 
-  constructor(event: AirdropEvent) {
+  constructor(event: AirSyncEvent) {
     // TODO: Replace with the API endpoint of the external system. This is
     // passed through the event payload (e.g. event.payload.connection_data.org_id
     // or a keyring subdomain field).
@@ -120,26 +120,26 @@ export class HttpClient {
   }
 
   // TODO: Replace with an actual API call that creates a todo in the external system.
-  // The function must return { id } on success or { error } on failure.
+  // Return a status with an id on success or an error with a message on failure.
   async createTodo(todo: ExternalTodo): Promise<ExternalSystemItemLoadingResponse> {
     const id = `todo-${Date.now()}`;
     todosStore.set(id, { ...todo, id, modified_date: new Date().toISOString() });
-    return { id };
+    return { status: 'success', id };
   }
 
   // TODO: Replace with an actual API call that updates a todo in the external system.
-  // The function must return { id } on success or { error } on failure.
+  // Return a status with an id on success or an error with a message on failure.
   async updateTodo(todo: ExternalTodo): Promise<ExternalSystemItemLoadingResponse> {
     if (!todosStore.has(todo.id)) {
-      return { error: `Todo with id "${todo.id}" not found in external system.` };
+      return { status: 'error', error: { message: `Todo with id "${todo.id}" not found in external system.` } };
     }
     todosStore.set(todo.id, { ...todo, modified_date: new Date().toISOString() });
-    return { id: todo.id };
+    return { status: 'success', id: todo.id };
   }
 
   // TODO: Replace with an actual API call that creates an attachment in the external system.
-  // The function must return { id } on success or { error } on failure.
+  // Return a status with an id on success or an error with a message on failure.
   async createAttachment(attachment: ExternalAttachment): Promise<ExternalSystemItemLoadingResponse> {
-    return { id: attachment.id };
+    return { status: 'success', id: attachment.id };
   }
 }

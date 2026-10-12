@@ -25,5 +25,6 @@ import { startServer } from './runner';
   }).argv;
 
   const port = argv.port || 8000;
+  process.env.AIRSYNC_LOCAL_DEVELOPMENT = '1';
   startServer(port);
 })();
