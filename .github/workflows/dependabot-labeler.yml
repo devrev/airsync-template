@@ -20,7 +20,7 @@ jobs:
             const { owner, repo, number } = context.issue;
             const prTitle = context.payload.pull_request.title;
 
-            if (!prTitle.includes('@devrev/ts-adaas')) {
+            if (!prTitle.includes('@devrev/airsync-sdk')) {
               console.log('Skipping PR: Not a DevRev SDK update');
               return;
             }

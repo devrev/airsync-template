@@ -1,4 +1,4 @@
-import { AirdropEvent, spawn } from '@devrev/ts-adaas';
+import { AirSyncEvent, spawn } from '@devrev/airsync-sdk';
 
 import initialDomainMapping from '../external-system/initial_domain_mapping.json';
 
@@ -19,7 +19,7 @@ export const initialExtractorState: ExtractorState = {
   attachments: { completed: false },
 };
 
-const run = async (events: AirdropEvent[]) => {
+const run = async (events: AirSyncEvent[]) => {
   for (const event of events) {
     await spawn<ExtractorState>({
       event,
