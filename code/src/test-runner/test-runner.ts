@@ -60,8 +60,6 @@ export const testRunner = async ({ fixturePath, functionName }: LocalRunnerProps
 function getFunctionName(event_type: string): FunctionFactoryType {
   if (event_type.indexOf('EXTRACT') != -1) {
     return 'extraction';
-  } else if (event_type.indexOf('LOAD') != -1) {
-    return 'loading';
   }
 
   throw new Error(`No functionName found for event ${event_type}. Specify functionName using '--functionName' parameter.`);

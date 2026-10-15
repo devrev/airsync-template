@@ -1,11 +1,16 @@
 {
   "payload": {
-    "event_type": "START_EXTRACTING_EXTERNAL_SYNC_UNITS",
     "connection_data": {
-      "org_id": "test_org",
-      "org_name": "Test Organization",
-      "key": "${TODO_API_KEY}",
+      "org_id": "tasks-demo",
+      "org_name": "Tasks Demo",
+      "key": "${EXAMPLE_API_TOKEN}",
       "key_type": "pat"
+    },
+    "event_type": "START_EXTRACTING_EXTERNAL_SYNC_UNITS",
+    "event_context": {
+      "external_sync_unit_id": "demo-project",
+      "external_sync_unit_name": "Demo Project",
+      "run_id": "demo-initial-run"
     }
   }
 }

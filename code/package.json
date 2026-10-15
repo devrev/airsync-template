@@ -1,7 +1,7 @@
 {
-  "name": "adaas-connector",
-  "version": "1.1.6",
-  "description": "DevRev ADaaS (Airdrop-as-a-service) Connector",
+  "name": "airsync-tasks-connector",
+  "version": "0.1.0",
+  "description": "One-way Tasks API import into DevRev issues",
   "main": "./dist/index.js",
   "scripts": {
     "deploy": "./scripts/deploy.sh",
@@ -16,8 +16,12 @@
     "start:watch": "nodemon ./src/main.ts",
     "start:production": "node dist/main.js",
     "test:server": "nodemon --watch src  --watch test test/main.ts",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch",
+    "source": "node --env-file-if-exists=.env ../source-api/server.mjs",
+    "test:source": "node --test ../source-api/server.test.mjs",
+    "test:integration": "npm run build && node --test integration/*.test.cjs",
+    "configure:source": "node scripts/configure-source.mjs"
   },
   "keywords": [],
   "author": "",
@@ -67,6 +71,6 @@
     "yargs": "^17.6.2"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }

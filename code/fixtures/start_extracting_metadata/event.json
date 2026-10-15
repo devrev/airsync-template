@@ -1,0 +1,16 @@
+{
+  "payload": {
+    "connection_data": {
+      "org_id": "tasks-demo",
+      "org_name": "Tasks Demo",
+      "key": "${EXAMPLE_API_TOKEN}",
+      "key_type": "pat"
+    },
+    "event_type": "START_EXTRACTING_METADATA",
+    "event_context": {
+      "external_sync_unit_id": "demo-project",
+      "external_sync_unit_name": "Demo Project",
+      "run_id": "demo-initial-run"
+    }
+  }
+}

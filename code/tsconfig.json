@@ -4,7 +4,9 @@
     "module": "commonjs",
     "baseUrl": "./",
     "paths": {
-      "*": ["./src/*"]
+      "*": [
+        "./src/*"
+      ]
     },
     "outDir": "./dist",
     "esModuleInterop": true,
@@ -14,6 +16,12 @@
     "declaration": true,
     "resolveJsonModule": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.test.ts"
+  ]
 }
