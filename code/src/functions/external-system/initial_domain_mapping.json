@@ -31,6 +31,36 @@
                     "transformation_method": "use_devrev_record"
                   }
                 },
+                "owned_by_ids": {
+                  "forward": true,
+                  "reverse": false,
+                  "transformation_method": {
+                    "is_array": true,
+                    "leaf_type": {
+                      "object_category": "stock",
+                      "object_type": "devu"
+                    },
+                    "transformation_method": "use_devrev_record"
+                  }
+                },
+                "priority": {
+                  "forward": true,
+                  "reverse": false,
+                  "transformation_method": {
+                    "enum": "P2",
+                    "transformation_method": "use_fixed_value",
+                    "value": "enum_value"
+                  }
+                },
+                "stage": {
+                  "forward": true,
+                  "reverse": false,
+                  "transformation_method": {
+                    "enum": "backlog",
+                    "transformation_method": "use_fixed_value",
+                    "value": "enum_value"
+                  }
+                },
                 "title": {
                   "fallback": {
                     "type": "text",
@@ -51,5 +81,6 @@
     },
     "format_version": "v0.2.0",
     "devrev_metadata_version": 13
-  }
+  },
+  "_dev_external_system_type": ""
 }
