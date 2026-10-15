@@ -31,6 +31,30 @@
                     "transformation_method": "use_devrev_record"
                   }
                 },
+                "created_by_id": {
+                  "forward": true,
+                  "reverse": false,
+                  "transformation_method": {
+                    "is_array": false,
+                    "leaf_type": {
+                      "object_category": "stock",
+                      "object_type": "devu"
+                    },
+                    "transformation_method": "use_devrev_record"
+                  }
+                },
+                "modified_by_id": {
+                  "forward": true,
+                  "reverse": false,
+                  "transformation_method": {
+                    "is_array": false,
+                    "leaf_type": {
+                      "object_category": "stock",
+                      "object_type": "devu"
+                    },
+                    "transformation_method": "use_devrev_record"
+                  }
+                },
                 "owned_by_ids": {
                   "forward": true,
                   "reverse": false,

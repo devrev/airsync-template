@@ -85,7 +85,7 @@ Unit checks cover rate-limit delay, upload failure without cursor advancement, m
 
 4. The template deployment script is retained as `npm run deploy`. It prompts for your environment, organization, email, deployment mode, and package slug. Deployment has not been run here.
 5. In DevRev, create the **Tasks API Connection** using the source bearer token, start **Tasks Demo**, and select **Demo Project**. Credentials are verified against the authenticated `/projects` endpoint when creating the connection. Organization discovery uses that same endpoint and identifies this single-account demo as `tasks-demo` / **Tasks Demo**.
-6. Review the Tasks-to-issue mapping. The template's `applies_to_part_id` mapping needs an existing DevRev product selected for the issues; no organization-specific target ID is hardcoded.
+6. Review the Tasks-to-issue mapping and select a DevRev product and default issue owner, creator, and modifier. Issues default to Backlog and priority P2 because this source only provides titles and timestamps. No organization-specific record IDs are hardcoded.
 
 ## Validation status
 

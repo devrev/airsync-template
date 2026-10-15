@@ -8,3 +8,5 @@ The connector uses the template runtime, manifest structure, metadata/mapping fo
 Live deployment exposed a missing required secret token-verification configuration. The follow-up fix uses the connector deployment plugin's documented bearer-token manifest pattern and verifies against the source `/projects` endpoint.
 
 Live discovery also requires the connection's external organization ID and name. The manifest uses the plugin's documented static organization pattern for this single-account demo, verified against `/projects`. The requirement was confirmed in the platform's keyring validation source.
+
+Live mapping installation requires issue stage, priority, and owner mappings. The domain-mapping skill and AirSync mapping tools supplied Backlog, P2, and a configurable default owner; both metadata and initial mapping pass chef-cli validation.
