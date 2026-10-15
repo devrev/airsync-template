@@ -1,39 +1,16 @@
-import {
-  AirSyncDefaultItemTypes,
-  ExternalSyncUnit,
-  processExtractionTask,
-} from '@devrev/airsync-sdk';
+import { AirSyncDefaultItemTypes, processExtractionTask } from '@devrev/airsync-sdk';
 
-import { normalizeTodoList } from '../../external-system/data-normalization';
+import { normalizeProject } from '../../external-system/data-normalization';
 import { HttpClient } from '../../external-system/http-client';
 
 processExtractionTask({
   task: async ({ adapter }) => {
-    adapter.initializeRepos([
-      {
-        itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
-        overriddenOptions: {
-          batchSize: 25000,
-        },
-      },
-    ]);
-
-    // TODO: Replace with HTTP client that will be used to make API calls
-    // to the external system.
-    const httpClient = new HttpClient(adapter.event);
-
-    // TODO: Replace with actual API call to fetch external sync units.
-    const todoLists = await httpClient.getTodoLists();
-
-    // TODO: Normalize the data received from the API call to match the
-    // ExternalSyncUnit interface. Modify the normalization function to suit
-    // your needs.
-    const externalSyncUnits: ExternalSyncUnit[] = todoLists.map((todoList) => normalizeTodoList(todoList));
-
-    await adapter
-      .getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)
-      ?.push(externalSyncUnits);
-
+    const projects = await new HttpClient(adapter.event).getProjects();
+    adapter.initializeRepos([{ itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS }]);
+    const repo = adapter.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS);
+    if (!repo) throw new Error('External sync units repo is missing');
+    await repo.push(projects.map(normalizeProject));
+    await repo.upload();
     return { status: 'success' };
   },
 });

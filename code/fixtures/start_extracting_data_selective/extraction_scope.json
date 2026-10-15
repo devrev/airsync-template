@@ -1,5 +1,5 @@
 {
-  "todos": { "extract": true },
-  "users": { "extract": false },
-  "attachments": { "extract": false }
+  "tasks": {
+    "extract": false
+  }
 }
