@@ -36,6 +36,12 @@ keyring_types:
         - id: token
           name: Token
           description: Tasks API bearer token
+          input_type: password
+      token_verification:
+        url: http://127.0.0.1:3100/projects
+        method: GET
+        headers:
+          Authorization: "Bearer [API_KEY]"
 imports:
   - slug: airsync-tasks-demo
     display_name: Tasks Demo

@@ -76,7 +76,7 @@ Unit checks cover rate-limit delay, upload failure without cursor advancement, m
    npm run package
    ```
 
-   This writes the origin to the bundled `source-config.json`. `EXAMPLE_API_ORIGIN` overrides it for local runs. Deployed credentials come from the connection key, not local environment variables.
+   This writes the origin to the bundled `source-config.json` and the manifest token-verification URL. `EXAMPLE_API_ORIGIN` overrides it for local runs. Deployed credentials come from the connection key, not local environment variables.
 3. Validate the manifest against the intended authenticated DevRev profile:
 
    ```sh
@@ -84,7 +84,7 @@ Unit checks cover rate-limit delay, upload failure without cursor advancement, m
    ```
 
 4. The template deployment script is retained as `npm run deploy`. It prompts for your environment, organization, email, deployment mode, and package slug. Deployment has not been run here.
-5. In DevRev, create the **Tasks API Connection** using the source bearer token, start **Tasks Demo**, and select **Demo Project**. Credentials are checked by the authenticated project-discovery request; the manifest does not define a separate token-verification endpoint.
+5. In DevRev, create the **Tasks API Connection** using the source bearer token, start **Tasks Demo**, and select **Demo Project**. Credentials are verified against the authenticated `/projects` endpoint when creating the connection.
 6. Review the Tasks-to-issue mapping. The template's `applies_to_part_id` mapping needs an existing DevRev product selected for the issues; no organization-specific target ID is hardcoded.
 
 ## Validation status
