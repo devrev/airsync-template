@@ -42,6 +42,13 @@ keyring_types:
         method: GET
         headers:
           Authorization: "Bearer [API_KEY]"
+    organization_data:
+      type: config
+      url: http://127.0.0.1:3100/projects
+      method: GET
+      headers:
+        Authorization: "Bearer [API_KEY]"
+      response_jq: '{id: "tasks-demo", name: "Tasks Demo"}'
 imports:
   - slug: airsync-tasks-demo
     display_name: Tasks Demo
