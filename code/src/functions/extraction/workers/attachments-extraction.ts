@@ -6,6 +6,8 @@ import {
   processExtractionTask,
 } from '@devrev/airsync-sdk';
 
+import { parseRetryAfter, readResponseHeader, toRateLimitDelay } from '../../external-system/guards';
+
 // TODO: Replace with function for fetching attachment streams from the
 // external system. This function should return either a stream of the
 // attachment data, a delay or an error.
@@ -26,12 +28,10 @@ async function getFileStream({
     return { status: 'success', httpStream: fileStreamResponse };
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      if (error?.response?.status === 429) {
-        const retryAfter = String(error.response?.headers['retry-after'] ?? '').trim();
-        const delaySeconds = Number(retryAfter);
-        if (retryAfter && Number.isFinite(delaySeconds) && delaySeconds >= 0) {
-          return { status: 'delay', delaySeconds };
-        }
+      // Retry-After may be delta seconds or an HTTP date; a missing or
+      // unparseable value falls back to the default delay.
+      if (error.response?.status === 429) {
+        return { status: 'delay', delaySeconds: parseRetryAfter(readResponseHeader(error, 'retry-after')) };
       }
 
       return {
@@ -63,6 +63,10 @@ processExtractionTask({
       });
     } catch (error) {
       console.error('An error occured while processing a task.', error);
+      const delay = toRateLimitDelay(error);
+      if (delay) {
+        return delay;
+      }
       throw error;
     }
   },

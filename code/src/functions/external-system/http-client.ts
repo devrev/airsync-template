@@ -1,4 +1,5 @@
 import { AirSyncEvent, ExternalSystemItemLoadingResponse } from '@devrev/airsync-sdk';
+import { API_ENDPOINT_PLACEHOLDER, requireNonBlankString, resolveApiEndpoint } from './guards';
 import { ExternalAttachment, ExternalTodo, ExternalTodoList, ExternalUser } from './types';
 
 // ---------------------------------------------------------------------------
@@ -56,13 +57,18 @@ const ATTACHMENTS: ExternalAttachment[] = [
 const todosStore = new Map<string, ExternalTodo>(TODOS.map((t) => [t.id, { ...t }]));
 
 // ---------------------------------------------------------------------------
-// Pagination helper
+// Pagination helpers
 //
 // In a real connector, pagination would be driven by cursor or offset/limit
 // parameters on the external API. Here we simulate it with a fixed page size
-// so the pattern is visible even though the data fits in a single page.
+// so the pattern is visible even though the data is small.
 // ---------------------------------------------------------------------------
-const PAGE_SIZE = 5;
+export const PAGE_SIZE = 5;
+
+export interface PageResult<T> {
+  items: T[];
+  hasMore: boolean;
+}
 
 function paginate<T>(items: T[]): T[] {
   // Simulate paginated retrieval. In a real connector you would loop here,
@@ -77,6 +83,14 @@ function paginate<T>(items: T[]): T[] {
   return result;
 }
 
+// Returns a single zero-based page, so extraction can stop after any page and
+// resume from the cursor saved in state.
+function pageOf<T>(items: T[], page: number): PageResult<T> {
+  const start = page * PAGE_SIZE;
+  const slice = items.slice(start, start + PAGE_SIZE);
+  return { items: slice, hasMore: start + slice.length < items.length };
+}
+
 // ---------------------------------------------------------------------------
 // HttpClient
 // ---------------------------------------------------------------------------
@@ -88,13 +102,14 @@ export class HttpClient {
   constructor(event: AirSyncEvent) {
     // TODO: Replace with the API endpoint of the external system. This is
     // passed through the event payload (e.g. event.payload.connection_data.org_id
-    // or a keyring subdomain field).
-    this.apiEndpoint = '<REPLACE_WITH_API_ENDPOINT>';
+    // or a keyring subdomain field). Once the placeholder is replaced,
+    // resolveApiEndpoint rejects anything but an HTTPS URL.
+    this.apiEndpoint = resolveApiEndpoint(API_ENDPOINT_PLACEHOLDER);
 
     // TODO: Replace with the API token of the external system. This is passed
     // through the event payload. The configuration for the token is defined in
-    // manifest.yaml under keyring_types.
-    this.apiToken = event.payload.connection_data.key;
+    // manifest.yaml under keyring_types. A missing or blank token fails fast.
+    this.apiToken = requireNonBlankString(event.payload.connection_data.key, 'connection_data.key');
   }
 
   // TODO: Replace with actual API calls that fetch external sync units (e.g.
@@ -104,19 +119,19 @@ export class HttpClient {
   }
 
   // TODO: Replace with actual API calls that fetch todos from the external system.
-  async getTodos(): Promise<ExternalTodo[]> {
-    return paginate([...todosStore.values()]);
+  async getTodosPage(page: number): Promise<PageResult<ExternalTodo>> {
+    return pageOf([...todosStore.values()], page);
   }
 
   // TODO: Replace with actual API calls that fetch users from the external system.
-  async getUsers(): Promise<ExternalUser[]> {
-    return paginate(USERS);
+  async getUsersPage(page: number): Promise<PageResult<ExternalUser>> {
+    return pageOf(USERS, page);
   }
 
   // TODO: Replace with actual API calls that fetch attachments from the
   // external system.
-  async getAttachments(): Promise<ExternalAttachment[]> {
-    return paginate(ATTACHMENTS);
+  async getAttachmentsPage(page: number): Promise<PageResult<ExternalAttachment>> {
+    return pageOf(ATTACHMENTS, page);
   }
 
   // TODO: Replace with an actual API call that creates a todo in the external system.

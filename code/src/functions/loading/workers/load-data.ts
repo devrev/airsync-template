@@ -6,6 +6,7 @@ import {
 } from '@devrev/airsync-sdk';
 
 import { denormalizeTodo } from '../../external-system/data-denormalization';
+import { toFailureResult } from '../../external-system/guards';
 import { HttpClient } from '../../external-system/http-client';
 import { LoaderState } from '../index';
 
@@ -24,8 +25,14 @@ async function createTodo({
   const httpClient = new HttpClient(event);
   const todo = denormalizeTodo(item);
 
-  const createTodoResponse = await httpClient.createTodo(todo);
-  return createTodoResponse;
+  try {
+    return await httpClient.createTodo(todo);
+  } catch (error) {
+    // A throw here would fail the whole loading phase. A rate limit becomes a
+    // delay, so loading pauses and resumes at this item; any other failure
+    // only marks this item as failed.
+    return toFailureResult(error, 'create todo');
+  }
 }
 
 // TODO: Replace with your update function that will be used to make API calls
@@ -52,8 +59,11 @@ async function updateTodo({
 
   const todo = denormalizeTodo(item);
 
-  const updateTodoResponse = await httpClient.updateTodo(todo);
-  return updateTodoResponse;
+  try {
+    return await httpClient.updateTodo(todo);
+  } catch (error) {
+    return toFailureResult(error, 'update todo');
+  }
 }
 
 processLoadingTask<LoaderState>({
