@@ -163,7 +163,7 @@ describe('decodeExtractorState', () => {
   });
 });
 
-// Built rather than written as a literal so secret scanners don't flag it.
+// Not a literal, so secret scanners don't flag it.
 function urlWithCredentials(): string {
   const url = new URL('https://api.example.com');
   url.username = 'user';

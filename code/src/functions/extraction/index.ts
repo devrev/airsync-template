@@ -4,11 +4,7 @@ import initialDomainMapping from '../external-system/initial_domain_mapping.json
 
 // TODO: Replace with your state interface that will keep track of the
 // extraction progress. For example, the page number, the number of items
-// processed, if the extraction is completed, etc. `nextPage` is the first page
-// not yet pushed, so a continued invocation resumes where the last one stopped.
-// State persists across sync runs; `runId` records which run the progress
-// belongs to, so a new run starts over while continuations and replayed events
-// of the same run resume.
+// processed, if the extraction is completed, etc.
 export interface ExtractorState {
   runId?: string;
   todos: { completed: boolean; nextPage?: number };

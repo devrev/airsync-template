@@ -28,8 +28,6 @@ async function getFileStream({
     return { status: 'success', httpStream: fileStreamResponse };
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      // Retry-After may be delta seconds or an HTTP date; a missing or
-      // unparseable value falls back to the default delay.
       if (error.response?.status === 429) {
         return { status: 'delay', delaySeconds: parseRetryAfter(readResponseHeader(error, 'retry-after')) };
       }

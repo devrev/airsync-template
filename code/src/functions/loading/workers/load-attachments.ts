@@ -28,9 +28,7 @@ async function createAttachment({
   try {
     return await httpClient.createAttachment(attachment);
   } catch (error) {
-    // A throw here would fail the whole loading phase. A rate limit becomes a
-    // delay, so loading pauses and resumes at this attachment; any other
-    // failure only marks this attachment as failed.
+    // A throw would fail the whole loading phase.
     return toFailureResult(error, 'create attachment');
   }
 }

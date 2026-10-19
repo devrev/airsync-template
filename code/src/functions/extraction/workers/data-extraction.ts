@@ -31,8 +31,7 @@ const repos = [
 
 // TODO: Replace with item types you want to extract from the external system.
 // Also replace the fetch functions with the actual functions that will be
-// used to fetch one page of data. Fetchers are page-addressable so extraction
-// can stop after any page and resume from the cursor saved in state.
+// used to fetch one page of data.
 interface ItemTypeToExtract {
   name: 'todos' | 'users' | 'attachments';
   fetchPage: (client: HttpClient, page: number) => Promise<PageResult<object>>;
@@ -53,9 +52,6 @@ const itemTypesToExtract: ItemTypeToExtract[] = [
   },
 ];
 
-// Pushes pages of one item type until it is complete, the page budget is
-// spent or the worker is about to time out. The cursor in state only advances
-// after a page is pushed, so a resumed invocation never skips a page.
 async function extractPages(
   adapter: ExtractionAdapter<ExtractorState>,
   httpClient: HttpClient,
@@ -65,8 +61,6 @@ async function extractPages(
   const bucket = adapter.state[itemType.name];
   const repo = adapter.getRepo(itemType.name);
   if (!repo) {
-    // Without this check a mistyped repo name would mark the type complete
-    // without extracting anything.
     throw new Error(`No repo initialized for item type ${itemType.name}`);
   }
   let pagesUsed = 0;
@@ -86,9 +80,7 @@ async function extractPages(
   return { pagesUsed, finished: true };
 }
 
-// Connector state persists across sync runs. Progress is kept for
-// continuations and replayed events of the same run and starts over when a
-// new run begins.
+// State persists across runs; only a new run starts over.
 function stateForRun(persisted: ExtractorState, runId: string): ExtractorState {
   if (persisted.runId === runId) {
     return persisted;
@@ -109,9 +101,7 @@ processExtractionTask<ExtractorState>({
 
       // TODO: Replace with your implementation to extract data from the external
       // system. This is just an example how you can iterate over the item types,
-      // extract them page by page, push them to the repo, and save the cursor in
-      // the state. Returning progress makes the platform continue the phase in
-      // a new invocation that resumes from the saved state.
+      // extract them, push them to the repo, and save the state.
       let pageBudget = MAX_PAGES_PER_INVOCATION;
       for (const itemTypeToExtract of itemTypesToExtract) {
         if (!adapter.shouldExtract(itemTypeToExtract.name)) {
@@ -128,8 +118,7 @@ processExtractionTask<ExtractorState>({
 
       return { status: 'success' };
     } catch (error) {
-      // A rate limit becomes a delay so the platform retries the same page.
-      // Anything else is rethrown so the SDK reports it without saving state.
+      // Rethrown so the SDK reports it without saving state.
       const delay = toRateLimitDelay(error);
       if (delay) {
         return delay;

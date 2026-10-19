@@ -28,9 +28,7 @@ async function createTodo({
   try {
     return await httpClient.createTodo(todo);
   } catch (error) {
-    // A throw here would fail the whole loading phase. A rate limit becomes a
-    // delay, so loading pauses and resumes at this item; any other failure
-    // only marks this item as failed.
+    // A throw would fail the whole loading phase.
     return toFailureResult(error, 'create todo');
   }
 }

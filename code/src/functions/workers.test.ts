@@ -1,10 +1,3 @@
-/**
- * Worker tests. Every worker registers its task through processExtractionTask
- * or processLoadingTask at import time; both are mocked so the tasks can be
- * called directly with plain adapter doubles and asserted on the TaskResult
- * they return. The in-memory HttpClient is used as is, with spies where a test
- * needs pagination, rate limits or failures.
- */
 import axios, { AxiosError, AxiosHeaders, AxiosResponse } from 'axios';
 
 import { processExtractionTask, processLoadingTask } from '@devrev/airsync-sdk';
@@ -106,7 +99,6 @@ const makeExtractionDouble = (overrides: Partial<Omit<ExtractionDouble, 'repos'>
 const runExtraction = (task: ExtractionTask, double: ExtractionDouble): Promise<TaskResult> =>
   task({ adapter: double as unknown as ExtractionAdapter<ExtractorState> });
 
-// Items pushed per call to the repo of an item type.
 const pushedBatches = (double: ExtractionDouble, itemType: string): object[][] =>
   double.repos.get(itemType)?.push.mock.calls.map(([items]) => items) ?? [];
 
@@ -297,7 +289,6 @@ describe('metadata-extraction worker', () => {
 describe('attachments-extraction worker', () => {
   const attachment = { id: 'att-1', url: 'https://example.com/file.txt' } as NormalizedAttachment;
 
-  // Runs the task once and returns the stream callback it handed to the SDK.
   const captureStream = async (): Promise<ExternalSystemAttachmentStreamingFunction> => {
     const double = makeExtractionDouble();
     await runExtraction(attachmentsExtractionTask, double);
@@ -440,7 +431,7 @@ describe('load-data worker', () => {
   });
 
   it('creates todos in the external system', async () => {
-    // Spied so the in-memory store, which extraction tests read, keeps its 15 todos.
+    // Keeps the shared in-memory store unchanged for extraction tests.
     const createTodo = jest
       .spyOn(HttpClient.prototype, 'createTodo')
       .mockResolvedValue({ status: 'success', id: 'todo-new' });
