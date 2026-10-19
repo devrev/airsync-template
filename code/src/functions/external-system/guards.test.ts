@@ -2,7 +2,6 @@ import { AxiosHeaders } from 'axios';
 
 import {
   API_ENDPOINT_PLACEHOLDER,
-  DEFAULT_RETRY_AFTER_SECONDS,
   INVALID_CHECKPOINT_MESSAGE,
   MAX_RETRY_AFTER_SECONDS,
   decodeApiEndpoint,
@@ -24,13 +23,13 @@ const delayFor = (retryAfter: unknown): number | undefined =>
   toRateLimitDelay({ response: { status: 429, headers: { 'retry-after': retryAfter } } })?.delaySeconds;
 
 describe('Retry-After parsing', () => {
-  it('defaults when the header is missing or blank', () => {
-    expect(toRateLimitDelay({ response: { status: 429 } })?.delaySeconds).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(delayFor(undefined)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(delayFor(null)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(delayFor('')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(delayFor('   ')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(delayFor([])).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+  it('returns no delay when the header is missing or blank', () => {
+    expect(toRateLimitDelay({ response: { status: 429 } })).toBeUndefined();
+    expect(delayFor(undefined)).toBeUndefined();
+    expect(delayFor(null)).toBeUndefined();
+    expect(delayFor('')).toBeUndefined();
+    expect(delayFor('   ')).toBeUndefined();
+    expect(delayFor([])).toBeUndefined();
   });
 
   it('parses delta seconds from strings, numbers and header arrays', () => {
@@ -50,10 +49,10 @@ describe('Retry-After parsing', () => {
     expect(delayFor(0)).toBe(0);
   });
 
-  it('falls back on negative or non-finite values', () => {
-    expect(delayFor('-3')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(delayFor(Number.NaN)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(delayFor(Number.POSITIVE_INFINITY)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+  it('returns no delay for negative or non-finite values', () => {
+    expect(delayFor('-3')).toBeUndefined();
+    expect(delayFor(Number.NaN)).toBeUndefined();
+    expect(delayFor(Number.POSITIVE_INFINITY)).toBeUndefined();
   });
 
   it('parses HTTP dates relative to now', () => {
@@ -63,9 +62,9 @@ describe('Retry-After parsing', () => {
     expect(delayFor(new Date(NOW + 10 * 3600_000).toUTCString())).toBe(MAX_RETRY_AFTER_SECONDS);
   });
 
-  it('falls back on unparseable values', () => {
-    expect(delayFor('soon')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(delayFor({ seconds: 5 })).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+  it('returns no delay for unparseable values', () => {
+    expect(delayFor('soon')).toBeUndefined();
+    expect(delayFor({ seconds: 5 })).toBeUndefined();
   });
 
   it('reads the header case-insensitively, including from AxiosHeaders', () => {
@@ -94,10 +93,11 @@ describe('toFailureResult', () => {
     expect(toFailureResult(error, 'extract data')).toEqual({ status: 'delay', delaySeconds: 9 });
   });
 
-  it('maps HTTP 429 without Retry-After to the default delay', () => {
-    expect(toFailureResult({ response: { status: 429 } }, 'extract data')).toEqual({
-      status: 'delay',
-      delaySeconds: DEFAULT_RETRY_AFTER_SECONDS,
+  it('maps HTTP 429 without Retry-After to an error, not an endless delay', () => {
+    const error = Object.assign(new Error('Too Many Requests'), { response: { status: 429 } });
+    expect(toFailureResult(error, 'create todo')).toEqual({
+      status: 'error',
+      error: { message: 'create todo (HTTP 429): Too Many Requests' },
     });
   });
 

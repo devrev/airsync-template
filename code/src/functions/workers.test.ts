@@ -20,7 +20,7 @@ import type {
 import { initialExtractorState } from './extraction';
 import type { ExtractorState } from './extraction';
 import type { LoaderState } from './loading';
-import { DEFAULT_RETRY_AFTER_SECONDS, INVALID_CHECKPOINT_MESSAGE, MAX_PAGES_PER_INVOCATION } from './external-system/guards';
+import { INVALID_CHECKPOINT_MESSAGE, MAX_PAGES_PER_INVOCATION } from './external-system/guards';
 import { HttpClient } from './external-system/http-client';
 import type { ExternalTodo } from './external-system/types';
 
@@ -237,6 +237,14 @@ describe('data-extraction worker', () => {
     expect(double.state.todos).toEqual({ completed: false, nextPage: 0 });
   });
 
+  it('rethrows a 429 without Retry-After instead of delaying forever', async () => {
+    jest.spyOn(HttpClient.prototype, 'getTodosPage').mockRejectedValue(httpError(429));
+
+    await expect(runExtraction(dataExtractionTask, makeExtractionDouble())).rejects.toThrow(
+      'Request failed with status code 429',
+    );
+  });
+
   it('rethrows other failures so the SDK reports them without saving state', async () => {
     jest.spyOn(HttpClient.prototype, 'getUsersPage').mockRejectedValue(httpError(500));
     const double = makeExtractionDouble();
@@ -335,17 +343,27 @@ describe('attachments-extraction worker', () => {
     expect(get).toHaveBeenCalledWith(attachment.url, expect.objectContaining({ responseType: 'stream', timeout: 30000 }));
   });
 
-  it('returns a delay for rate-limited downloads, with or without Retry-After', async () => {
-    const get = jest.spyOn(axios, 'get');
+  it('returns a delay for rate-limited downloads that send Retry-After', async () => {
+    jest.spyOn(axios, 'get').mockRejectedValueOnce(httpError(429, { 'retry-after': '7' }));
 
-    get.mockRejectedValueOnce(httpError(429, { 'retry-after': '7' }));
     await expect(streamAttachment()).resolves.toEqual({ status: 'delay', delaySeconds: 7 });
+  });
+
+  it('fails the download instead of delaying forever when a 429 has no usable Retry-After', async () => {
+    const get = jest.spyOn(axios, 'get');
+    const expected = {
+      status: 'error',
+      error: {
+        message:
+          'Error while fetching attachment att-1 from URL. Error code: 429. Error message: Request failed with status code 429.',
+      },
+    };
 
     get.mockRejectedValueOnce(httpError(429));
-    await expect(streamAttachment()).resolves.toEqual({ status: 'delay', delaySeconds: DEFAULT_RETRY_AFTER_SECONDS });
+    await expect(streamAttachment()).resolves.toEqual(expected);
 
     get.mockRejectedValueOnce(httpError(429, { 'retry-after': 'soon' }));
-    await expect(streamAttachment()).resolves.toEqual({ status: 'delay', delaySeconds: DEFAULT_RETRY_AFTER_SECONDS });
+    await expect(streamAttachment()).resolves.toEqual(expected);
   });
 
   it('returns an error for other download failures', async () => {

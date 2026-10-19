@@ -3,7 +3,6 @@ import type { ErrorRecord } from '@devrev/airsync-sdk';
 import type { ExtractorState } from '../extraction';
 
 export const API_ENDPOINT_PLACEHOLDER = '<REPLACE_WITH_API_ENDPOINT>';
-export const DEFAULT_RETRY_AFTER_SECONDS = 60;
 export const MAX_RETRY_AFTER_SECONDS = 3600;
 export const MAX_PAGES_PER_INVOCATION = 10;
 export const INVALID_CHECKPOINT_MESSAGE = 'Invalid extraction checkpoint';
@@ -12,32 +11,26 @@ type RateLimitDelay = { status: 'delay'; delaySeconds: number };
 
 export type FailureResult = RateLimitDelay | { status: 'error'; error: ErrorRecord };
 
-// 0 means "retry now".
-const clampRetryAfter = (seconds: number): number =>
-  seconds >= 0 ? Math.min(Math.ceil(seconds), MAX_RETRY_AFTER_SECONDS) : DEFAULT_RETRY_AFTER_SECONDS;
+// 0 means "retry now"; negative values are invalid.
+const clampRetryAfter = (seconds: number): number | undefined =>
+  seconds >= 0 ? Math.min(Math.ceil(seconds), MAX_RETRY_AFTER_SECONDS) : undefined;
 
-const retryAfterFromText = (text: string): number => {
+const retryAfterFromText = (text: string): number | undefined => {
   const asNumber = Number(text);
   if (Number.isFinite(asNumber)) {
     return clampRetryAfter(asNumber);
   }
   const asDate = Date.parse(text);
-  if (Number.isFinite(asDate)) {
-    return clampRetryAfter(Math.max(0, (asDate - Date.now()) / 1000));
-  }
-  return DEFAULT_RETRY_AFTER_SECONDS;
+  return Number.isFinite(asDate) ? clampRetryAfter(Math.max(0, (asDate - Date.now()) / 1000)) : undefined;
 };
 
-// Retry-After as delta seconds or an HTTP date.
-const parseRetryAfter = (headerValue: unknown): number => {
+// Retry-After as delta seconds or an HTTP date; undefined when missing or invalid.
+const parseRetryAfter = (headerValue: unknown): number | undefined => {
   const raw: unknown = Array.isArray(headerValue) ? headerValue[0] : headerValue;
   if (typeof raw === 'number') {
-    return Number.isFinite(raw) ? clampRetryAfter(raw) : DEFAULT_RETRY_AFTER_SECONDS;
+    return Number.isFinite(raw) ? clampRetryAfter(raw) : undefined;
   }
-  if (typeof raw !== 'string' || raw.trim() === '') {
-    return DEFAULT_RETRY_AFTER_SECONDS;
-  }
-  return retryAfterFromText(raw.trim());
+  return typeof raw === 'string' && raw.trim() !== '' ? retryAfterFromText(raw.trim()) : undefined;
 };
 
 const readResponse = (error: unknown): { status?: unknown; headers?: unknown } | undefined => {
@@ -77,10 +70,16 @@ const describeError = (error: unknown): string => {
   return 'unknown error';
 };
 
-export const toRateLimitDelay = (error: unknown): RateLimitDelay | undefined =>
-  readHttpStatus(error) === 429
-    ? { status: 'delay', delaySeconds: parseRetryAfter(readResponseHeader(error, 'retry-after')) }
-    : undefined;
+// Only a 429 that says when to retry becomes a delay. Without Retry-After it
+// is an ordinary failure, so a server that always answers 429 can't stall the
+// sync in an endless delay loop.
+export const toRateLimitDelay = (error: unknown): RateLimitDelay | undefined => {
+  if (readHttpStatus(error) !== 429) {
+    return undefined;
+  }
+  const delaySeconds = parseRetryAfter(readResponseHeader(error, 'retry-after'));
+  return delaySeconds === undefined ? undefined : { status: 'delay', delaySeconds };
+};
 
 export const toFailureResult = (error: unknown, context: string): FailureResult => {
   const delay = toRateLimitDelay(error);
