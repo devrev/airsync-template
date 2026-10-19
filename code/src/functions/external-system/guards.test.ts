@@ -7,8 +7,6 @@ import {
   MAX_RETRY_AFTER_SECONDS,
   decodeApiEndpoint,
   decodeExtractorState,
-  parseRetryAfter,
-  readResponseHeader,
   requireNonBlankString,
   resolveApiEndpoint,
   toFailureResult,
@@ -21,67 +19,60 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe('parseRetryAfter', () => {
+// Delay for a 429 whose Retry-After header has the given value.
+const delayFor = (retryAfter: unknown): number | undefined =>
+  toRateLimitDelay({ response: { status: 429, headers: { 'retry-after': retryAfter } } })?.delaySeconds;
+
+describe('Retry-After parsing', () => {
   it('defaults when the header is missing or blank', () => {
-    expect(parseRetryAfter(undefined)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(parseRetryAfter(null)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(parseRetryAfter('')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(parseRetryAfter('   ')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(parseRetryAfter([])).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(toRateLimitDelay({ response: { status: 429 } })?.delaySeconds).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor(undefined)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor(null)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor('')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor('   ')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor([])).toBe(DEFAULT_RETRY_AFTER_SECONDS);
   });
 
   it('parses delta seconds from strings, numbers and header arrays', () => {
-    expect(parseRetryAfter('9')).toBe(9);
-    expect(parseRetryAfter(' 12 ')).toBe(12);
-    expect(parseRetryAfter(7)).toBe(7);
-    expect(parseRetryAfter(['5', '99'])).toBe(5);
+    expect(delayFor('9')).toBe(9);
+    expect(delayFor(' 12 ')).toBe(12);
+    expect(delayFor(7)).toBe(7);
+    expect(delayFor(['5', '99'])).toBe(5);
   });
 
   it('rounds fractional seconds up and caps at the maximum', () => {
-    expect(parseRetryAfter('1.2')).toBe(2);
-    expect(parseRetryAfter(String(MAX_RETRY_AFTER_SECONDS + 1))).toBe(MAX_RETRY_AFTER_SECONDS);
+    expect(delayFor('1.2')).toBe(2);
+    expect(delayFor(String(MAX_RETRY_AFTER_SECONDS + 1))).toBe(MAX_RETRY_AFTER_SECONDS);
   });
 
   it('keeps zero as "retry now"', () => {
-    expect(parseRetryAfter('0')).toBe(0);
-    expect(parseRetryAfter(0)).toBe(0);
+    expect(delayFor('0')).toBe(0);
+    expect(delayFor(0)).toBe(0);
   });
 
   it('falls back on negative or non-finite values', () => {
-    expect(parseRetryAfter('-3')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(parseRetryAfter(Number.NaN)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(parseRetryAfter(Number.POSITIVE_INFINITY)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor('-3')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor(Number.NaN)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor(Number.POSITIVE_INFINITY)).toBe(DEFAULT_RETRY_AFTER_SECONDS);
   });
 
   it('parses HTTP dates relative to now', () => {
     jest.spyOn(Date, 'now').mockReturnValue(NOW);
-    expect(parseRetryAfter(new Date(NOW + 120_000).toUTCString())).toBe(120);
-    expect(parseRetryAfter(new Date(NOW - 5_000).toUTCString())).toBe(0);
-    expect(parseRetryAfter(new Date(NOW + 10 * 3600_000).toUTCString())).toBe(MAX_RETRY_AFTER_SECONDS);
+    expect(delayFor(new Date(NOW + 120_000).toUTCString())).toBe(120);
+    expect(delayFor(new Date(NOW - 5_000).toUTCString())).toBe(0);
+    expect(delayFor(new Date(NOW + 10 * 3600_000).toUTCString())).toBe(MAX_RETRY_AFTER_SECONDS);
   });
 
   it('falls back on unparseable values', () => {
-    expect(parseRetryAfter('soon')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-    expect(parseRetryAfter({ seconds: 5 })).toBe(DEFAULT_RETRY_AFTER_SECONDS);
-  });
-});
-
-describe('readResponseHeader', () => {
-  it('reads plain header objects case-insensitively', () => {
-    const error = { response: { headers: { 'Retry-After': '4' } } };
-    expect(readResponseHeader(error, 'retry-after')).toBe('4');
+    expect(delayFor('soon')).toBe(DEFAULT_RETRY_AFTER_SECONDS);
+    expect(delayFor({ seconds: 5 })).toBe(DEFAULT_RETRY_AFTER_SECONDS);
   });
 
-  it('reads AxiosHeaders instances', () => {
+  it('reads the header case-insensitively, including from AxiosHeaders', () => {
+    expect(toRateLimitDelay({ response: { status: 429, headers: { 'Retry-After': '4' } } })?.delaySeconds).toBe(4);
     const headers = new AxiosHeaders();
     headers.set('Retry-After', '6');
-    expect(readResponseHeader({ response: { headers } }, 'retry-after')).toBe('6');
-  });
-
-  it('returns undefined without a response or headers', () => {
-    expect(readResponseHeader(undefined, 'retry-after')).toBeUndefined();
-    expect(readResponseHeader(new Error('x'), 'retry-after')).toBeUndefined();
-    expect(readResponseHeader({ response: { status: 429 } }, 'retry-after')).toBeUndefined();
+    expect(toRateLimitDelay({ response: { status: 429, headers } })?.delaySeconds).toBe(6);
   });
 });
 
@@ -142,9 +133,9 @@ describe('decodeExtractorState', () => {
     expect(decodeExtractorState({ todos, users, attachments })).toEqual({ todos, users, attachments });
   });
 
-  it('keeps top-level keys it does not validate and normalizes buckets', () => {
-    const decoded = decodeExtractorState({ ...valid, lastModified: '2026-01-01', todos: { ...valid.todos, stray: true } });
-    expect(decoded).toEqual({ ...valid, lastModified: '2026-01-01' });
+  it('keeps keys it does not validate, at the top level and in buckets', () => {
+    const state = { ...valid, lastModified: '2026-01-01', todos: { ...valid.todos, cursorToken: 'abc' } };
+    expect(decodeExtractorState(state)).toEqual(state);
   });
 
   it.each([

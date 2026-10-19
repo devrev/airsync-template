@@ -63,7 +63,7 @@ const todosStore = new Map<string, ExternalTodo>(TODOS.map((t) => [t.id, { ...t 
 // parameters on the external API. Here we simulate it with a fixed page size
 // so the pattern is visible even though the data fits in a single page.
 // ---------------------------------------------------------------------------
-export const PAGE_SIZE = 5;
+const PAGE_SIZE = 5;
 
 export interface PageResult<T> {
   items: T[];

@@ -8,9 +8,9 @@ export const MAX_RETRY_AFTER_SECONDS = 3600;
 export const MAX_PAGES_PER_INVOCATION = 10;
 export const INVALID_CHECKPOINT_MESSAGE = 'Invalid extraction checkpoint';
 
-export type FailureResult =
-  | { status: 'delay'; delaySeconds: number }
-  | { status: 'error'; error: ErrorRecord };
+type RateLimitDelay = { status: 'delay'; delaySeconds: number };
+
+export type FailureResult = RateLimitDelay | { status: 'error'; error: ErrorRecord };
 
 // 0 means "retry now".
 const clampRetryAfter = (seconds: number): number =>
@@ -29,7 +29,7 @@ const retryAfterFromText = (text: string): number => {
 };
 
 // Retry-After as delta seconds or an HTTP date.
-export const parseRetryAfter = (headerValue: unknown): number => {
+const parseRetryAfter = (headerValue: unknown): number => {
   const raw: unknown = Array.isArray(headerValue) ? headerValue[0] : headerValue;
   if (typeof raw === 'number') {
     return Number.isFinite(raw) ? clampRetryAfter(raw) : DEFAULT_RETRY_AFTER_SECONDS;
@@ -53,7 +53,7 @@ const readHttpStatus = (error: unknown): number | undefined => {
   return typeof status === 'number' ? status : undefined;
 };
 
-export const readResponseHeader = (error: unknown, name: string): unknown => {
+const readResponseHeader = (error: unknown, name: string): unknown => {
   const headers = readResponse(error)?.headers;
   if (typeof headers !== 'object' || headers === null) {
     return undefined;
@@ -77,7 +77,7 @@ const describeError = (error: unknown): string => {
   return 'unknown error';
 };
 
-export const toRateLimitDelay = (error: unknown): { status: 'delay'; delaySeconds: number } | undefined =>
+export const toRateLimitDelay = (error: unknown): RateLimitDelay | undefined =>
   readHttpStatus(error) === 429
     ? { status: 'delay', delaySeconds: parseRetryAfter(readResponseHeader(error, 'retry-after')) }
     : undefined;
@@ -101,11 +101,12 @@ const decodeBucket = (value: unknown): ExtractorBucket => {
   if (typeof value !== 'object' || value === null) {
     throw new Error(INVALID_CHECKPOINT_MESSAGE);
   }
-  const { completed, nextPage } = value as { completed?: unknown; nextPage?: unknown };
+  const bucket = value as Record<string, unknown>;
+  const { completed, nextPage } = bucket;
   if (typeof completed !== 'boolean' || (nextPage !== undefined && !isNonNegativeInteger(nextPage))) {
     throw new Error(INVALID_CHECKPOINT_MESSAGE);
   }
-  return nextPage === undefined ? { completed } : { completed, nextPage };
+  return { ...bucket, completed, nextPage };
 };
 
 // Unvalidated keys are kept.

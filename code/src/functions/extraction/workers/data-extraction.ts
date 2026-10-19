@@ -118,11 +118,11 @@ processExtractionTask<ExtractorState>({
 
       return { status: 'success' };
     } catch (error) {
-      // Rethrown so the SDK reports it without saving state.
       const delay = toRateLimitDelay(error);
       if (delay) {
         return delay;
       }
+      // Rethrown so the SDK reports it without saving state.
       throw error;
     }
   },
