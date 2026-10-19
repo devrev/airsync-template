@@ -10,6 +10,7 @@
     "lint:fix": "eslint --fix -- .",
     "build": "rimraf ./dist && tsc",
     "build:watch": "tsc --watch",
+    "typecheck": "tsc -p tsconfig.test.json",
     "prepackage": "npm run build",
     "package": "tar -cvzf build.tar.gz dist package.json package-lock.json .npmrc",
     "start": "ts-node ./src/main.ts",

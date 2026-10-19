@@ -1,4 +1,5 @@
 import { AirSyncEvent, ExternalSystemItemLoadingResponse } from '@devrev/airsync-sdk';
+import { API_ENDPOINT_PLACEHOLDER, requireNonBlankString, resolveApiEndpoint } from './guards';
 import { ExternalAttachment, ExternalTodo, ExternalTodoList, ExternalUser } from './types';
 
 // ---------------------------------------------------------------------------
@@ -64,6 +65,11 @@ const todosStore = new Map<string, ExternalTodo>(TODOS.map((t) => [t.id, { ...t 
 // ---------------------------------------------------------------------------
 const PAGE_SIZE = 5;
 
+export interface PageResult<T> {
+  items: T[];
+  hasMore: boolean;
+}
+
 function paginate<T>(items: T[]): T[] {
   // Simulate paginated retrieval. In a real connector you would loop here,
   // calling the API with limit/offset (or a cursor) until hasMore is false.
@@ -75,6 +81,12 @@ function paginate<T>(items: T[]): T[] {
   }
 
   return result;
+}
+
+function pageOf<T>(items: T[], page: number): PageResult<T> {
+  const start = page * PAGE_SIZE;
+  const slice = items.slice(start, start + PAGE_SIZE);
+  return { items: slice, hasMore: start + slice.length < items.length };
 }
 
 // ---------------------------------------------------------------------------
@@ -89,12 +101,12 @@ export class HttpClient {
     // TODO: Replace with the API endpoint of the external system. This is
     // passed through the event payload (e.g. event.payload.connection_data.org_id
     // or a keyring subdomain field).
-    this.apiEndpoint = '<REPLACE_WITH_API_ENDPOINT>';
+    this.apiEndpoint = resolveApiEndpoint(API_ENDPOINT_PLACEHOLDER);
 
     // TODO: Replace with the API token of the external system. This is passed
     // through the event payload. The configuration for the token is defined in
     // manifest.yaml under keyring_types.
-    this.apiToken = event.payload.connection_data.key;
+    this.apiToken = requireNonBlankString(event.payload.connection_data.key, 'connection_data.key');
   }
 
   // TODO: Replace with actual API calls that fetch external sync units (e.g.
@@ -104,19 +116,19 @@ export class HttpClient {
   }
 
   // TODO: Replace with actual API calls that fetch todos from the external system.
-  async getTodos(): Promise<ExternalTodo[]> {
-    return paginate([...todosStore.values()]);
+  async getTodosPage(page: number): Promise<PageResult<ExternalTodo>> {
+    return pageOf([...todosStore.values()], page);
   }
 
   // TODO: Replace with actual API calls that fetch users from the external system.
-  async getUsers(): Promise<ExternalUser[]> {
-    return paginate(USERS);
+  async getUsersPage(page: number): Promise<PageResult<ExternalUser>> {
+    return pageOf(USERS, page);
   }
 
   // TODO: Replace with actual API calls that fetch attachments from the
   // external system.
-  async getAttachments(): Promise<ExternalAttachment[]> {
-    return paginate(ATTACHMENTS);
+  async getAttachmentsPage(page: number): Promise<PageResult<ExternalAttachment>> {
+    return pageOf(ATTACHMENTS, page);
   }
 
   // TODO: Replace with an actual API call that creates a todo in the external system.

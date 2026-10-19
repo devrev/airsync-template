@@ -6,17 +6,18 @@ import initialDomainMapping from '../external-system/initial_domain_mapping.json
 // extraction progress. For example, the page number, the number of items
 // processed, if the extraction is completed, etc.
 export interface ExtractorState {
-  todos: { completed: boolean };
-  users: { completed: boolean };
-  attachments: { completed: boolean };
+  runId?: string;
+  todos: { completed: boolean; nextPage?: number };
+  users: { completed: boolean; nextPage?: number };
+  attachments: { completed: boolean; nextPage?: number };
 }
 
 // TODO: Replace with your initial state that will be passed to the worker.
 // This state will be used as a starting point for the extraction process.
 export const initialExtractorState: ExtractorState = {
-  todos: { completed: false },
-  users: { completed: false },
-  attachments: { completed: false },
+  todos: { completed: false, nextPage: 0 },
+  users: { completed: false, nextPage: 0 },
+  attachments: { completed: false, nextPage: 0 },
 };
 
 const run = async (events: AirSyncEvent[]) => {
