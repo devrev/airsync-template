@@ -44,10 +44,12 @@ import {
 } from '@devrev/typescript-sdk/dist/snap-ins';
 
 const app: Express = express();
+app.disable('x-powered-by');
+app.set('json escape', true);
 app.use(bodyParser.json(), bodyParser.urlencoded({ extended: false }));
 
 export const startServer = (port: number) => {
-  app.listen(port, () => {
+  return app.listen(port, () => {
     console.log(`[server]: Server is running at http://localhost:${port}`);
   });
 };
@@ -159,7 +161,7 @@ async function handleEvent(events: any[], isAsync: boolean, resp: Response) {
   }
 
   if (!isAsync) {
-    resp.status(200).send(results[0]);
+    resp.status(200).json(results[0]);
   }
 }
 
