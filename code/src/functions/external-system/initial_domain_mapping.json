@@ -1,7 +1,7 @@
 {
   "additional_mappings": {
     "record_type_mappings": {
-      "todos": {
+      "tasks": {
         "default_mapping": {
           "object_category": "stock",
           "object_type": "issue"
@@ -10,47 +10,9 @@
           {
             "devrev_leaf_type": "issue",
             "forward": true,
-            "reverse": true,
+            "reverse": false,
             "shard": {
-              "constructed_custom_fields": {
-                "ext_object_type": {
-                  "field_descriptor": {
-                    "allowed_values": ["Todos"],
-                    "data_name": "ext_object_type",
-                    "db_name": "ext_object_type",
-                    "default_value": "Todos",
-                    "description": "The source object type/subtype that the item was created from.",
-                    "field_type": "enum",
-                    "is_filterable": true,
-                    "is_required": true,
-                    "name": "ext_object_type",
-                    "oasis": {
-                      "name": "ext_object_type"
-                    },
-                    "ui": {
-                      "display_name": "External Object Type",
-                      "is_hidden_during_create": true,
-                      "is_read_only": true
-                    }
-                  },
-                  "transformation_method": {
-                    "can_apply_to_null": false,
-                    "custom_field_type": {
-                      "allowed_values": ["Todos"],
-                      "data_name": "dummy name",
-                      "db_name": "dummy name",
-                      "field_type": "enum",
-                      "name": "dummy name",
-                      "oasis": {
-                        "name": "dummy name"
-                      }
-                    },
-                    "forward_jq": "\"Todos\"",
-                    "transformation_method": "use_raw_jq",
-                    "use_primary_input": false
-                  }
-                }
-              },
+              "constructed_custom_fields": {},
               "devrev_leaf_type": {
                 "object_category": "stock",
                 "object_type": "issue"
@@ -69,43 +31,47 @@
                     "transformation_method": "use_devrev_record"
                   }
                 },
-                "body": {
-                  "forward": true,
-                  "primary_external_field": "body",
-                  "reverse": true,
-                  "transformation_method_for_set": {
-                    "transformation_method": "use_directly"
-                  }
-                },
                 "created_by_id": {
                   "forward": true,
-                  "primary_external_field": "creator",
-                  "reverse": true,
-                  "transformation_method_for_set": {
-                    "transformation_method": "use_directly"
+                  "reverse": false,
+                  "transformation_method": {
+                    "is_array": false,
+                    "leaf_type": {
+                      "object_category": "stock",
+                      "object_type": "devu"
+                    },
+                    "transformation_method": "use_devrev_record"
                   }
                 },
-                "item_url_field": {
+                "modified_by_id": {
                   "forward": true,
-                  "primary_external_field": "item_url_field",
                   "reverse": false,
-                  "transformation_method_for_set": {
-                    "transformation_method": "use_directly"
+                  "transformation_method": {
+                    "is_array": false,
+                    "leaf_type": {
+                      "object_category": "stock",
+                      "object_type": "devu"
+                    },
+                    "transformation_method": "use_devrev_record"
                   }
                 },
                 "owned_by_ids": {
                   "forward": true,
-                  "primary_external_field": "owner",
-                  "reverse": true,
-                  "transformation_method_for_set": {
-                    "transformation_method": "use_as_array_value"
+                  "reverse": false,
+                  "transformation_method": {
+                    "is_array": true,
+                    "leaf_type": {
+                      "object_category": "stock",
+                      "object_type": "devu"
+                    },
+                    "transformation_method": "use_devrev_record"
                   }
                 },
                 "priority": {
                   "forward": true,
                   "reverse": false,
-                  "transformation_method_for_set": {
-                    "enum": "P1",
+                  "transformation_method": {
+                    "enum": "P2",
                     "transformation_method": "use_fixed_value",
                     "value": "enum_value"
                   }
@@ -113,8 +79,8 @@
                 "stage": {
                   "forward": true,
                   "reverse": false,
-                  "transformation_method_for_set": {
-                    "enum": "in_development",
+                  "transformation_method": {
+                    "enum": "backlog",
                     "transformation_method": "use_fixed_value",
                     "value": "enum_value"
                   }
@@ -126,41 +92,6 @@
                   },
                   "forward": true,
                   "primary_external_field": "title",
-                  "reverse": true,
-                  "transformation_method_for_set": {
-                    "transformation_method": "use_directly"
-                  }
-                }
-              }
-            }
-          }
-        ]
-      },
-      "users": {
-        "default_mapping": {
-          "object_category": "stock",
-          "object_type": "devu"
-        },
-        "possible_record_type_mappings": [
-          {
-            "devrev_leaf_type": "devu",
-            "forward": true,
-            "reverse": false,
-            "shard": {
-              "constructed_custom_fields": {},
-              "devrev_leaf_type": {
-                "object_category": "stock",
-                "object_type": "devu"
-              },
-              "mode": "create_shard",
-              "stock_field_mappings": {
-                "display_name": {
-                  "fallback": {
-                    "type": "text",
-                    "value": "Fallback name"
-                  },
-                  "forward": true,
-                  "primary_external_field": "name",
                   "reverse": false,
                   "transformation_method_for_set": {
                     "transformation_method": "use_directly"
@@ -174,5 +105,6 @@
     },
     "format_version": "v0.2.0",
     "devrev_metadata_version": 13
-  }
+  },
+  "_dev_external_system_type": ""
 }
