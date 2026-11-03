@@ -1,43 +1,14 @@
 import * as dotenv from 'dotenv';
-import * as fs from 'fs';
 import * as path from 'path';
 
 import { AirSyncEvent, createMockEvent, DeepPartial, EventType, MockServer } from '@devrev/airsync-sdk';
 
 import { functionFactory, FunctionFactoryType } from '../function-factory';
+import { readFixtureFile, resolveFixturePath } from './fixture-files';
 
 export interface LocalRunnerProps {
   fixturePath: string;
   functionName?: FunctionFactoryType;
-}
-
-/**
- * Replaces `${VAR_NAME}` placeholders with values from `process.env`.
- * Values are JSON-escaped so special characters don't break the JSON structure.
- */
-function resolveEnvVariables(raw: string, filePath: string): string {
-  return raw.replace(/\$\{(\w+)\}/g, (_match, varName: string) => {
-    const value = process.env[varName];
-    if (value === undefined) {
-      throw new Error(
-        `Environment variable "${varName}" referenced in ${filePath} is not set. ` +
-        'Make sure it is defined in your .env file or exported in your shell.'
-      );
-    }
-    return JSON.stringify(value).slice(1, -1);
-  });
-}
-
-function readFixtureFile<T>(filePath: string): T | undefined {
-  if (!fs.existsSync(filePath)) {
-    return undefined;
-  }
-  const raw = fs.readFileSync(filePath, 'utf-8').trim();
-  if (raw.length === 0) {
-    return undefined;
-  }
-  const resolved = resolveEnvVariables(raw, filePath);
-  return JSON.parse(resolved) as T;
 }
 
 function resolveEventType(input: string): EventType {
@@ -50,11 +21,9 @@ function resolveEventType(input: string): EventType {
 export const testRunner = async ({ fixturePath, functionName }: LocalRunnerProps) => {
   dotenv.config();
 
-  const fixturesDir = path.resolve(__dirname, '../../fixtures', fixturePath);
-  if (!fs.existsSync(fixturesDir)) {
-    throw new Error(`Fixture directory not found: ${fixturesDir}`);
-  }
-  return runWithFixtureDir(fixturesDir, functionName);
+  const fixturesRoot = path.resolve(__dirname, '../../fixtures');
+  const fixturesDir = resolveFixturePath(fixturesRoot, fixturePath);
+  return runWithFixtureDir(fixturesRoot, fixturesDir, functionName);
 };
 
 function getFunctionName(event_type: string): FunctionFactoryType {
@@ -67,14 +36,14 @@ function getFunctionName(event_type: string): FunctionFactoryType {
   throw new Error(`No functionName found for event ${event_type}. Specify functionName using '--functionName' parameter.`);
 }
 
-async function runWithFixtureDir(fixturesDir: string, functionName?: FunctionFactoryType) {
+async function runWithFixtureDir(fixturesRoot: string, fixturesDir: string, functionName?: FunctionFactoryType) {
   const eventPath = path.join(fixturesDir, 'event.json');
   const statePath = path.join(fixturesDir, 'state.json');
   const extractionScopePath = path.join(fixturesDir, 'extraction_scope.json');
 
-  const fixtureEvent = readFixtureFile<DeepPartial<AirSyncEvent>>(eventPath);
-  const fixtureState = readFixtureFile<Record<string, unknown>>(statePath);
-  const fixtureExtractionScope = readFixtureFile<Record<string, unknown>>(extractionScopePath);
+  const fixtureEvent = readFixtureFile<DeepPartial<AirSyncEvent>>(fixturesRoot, eventPath);
+  const fixtureState = readFixtureFile<Record<string, unknown>>(fixturesRoot, statePath);
+  const fixtureExtractionScope = readFixtureFile<Record<string, unknown>>(fixturesRoot, extractionScopePath);
 
   if (!fixtureEvent) {
     throw new Error(

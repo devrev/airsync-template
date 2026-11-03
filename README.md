@@ -30,3 +30,7 @@ The runner reads `code/.env` and resolves `${TODO_API_KEY}` in fixture files,
 so copy `code/.env.example` before running the fixtures.
 The fixture runner and local test server set `AIRSYNC_LOCAL_DEVELOPMENT=1`
 to enable local logging and artifact copies in `code/extracted_files/`.
+
+Fixture paths and fixture file symlinks must stay inside `code/fixtures/`.
+The local HTTP test server returns a generic message for thrown handler errors;
+detailed errors stay in the server logs.
