@@ -61,16 +61,21 @@
   },
   "dependencies": {
     "@devrev/airsync-sdk": "2.1.0-beta.2",
-    "@devrev/typescript-sdk": "1.1.78",
+    "@devrev/typescript-sdk": "1.1.79",
     "axios": "^1.20.0",
     "dotenv": "^16.0.3",
-    "jiti": "2.5.1",
+    "jiti": "2.7.0",
     "js-jsonl": "^1.1.1",
     "markdown-it": "15.0.3",
-    "turndown": "7.2.4",
+    "turndown": "7.2.5",
     "yargs": "^17.6.2"
   },
   "engines": {
     "node": ">=20"
+  },
+  "overrides": {
+    "nodemon": {
+      "minimatch": "11.0.1"
+    }
   }
 }
