@@ -1,10 +1,17 @@
 import { ExternalSystemAttachment, ExternalSystemItem } from '@devrev/airsync-sdk';
+import MarkdownIt from 'markdown-it';
 import { ExternalAttachment, ExternalTodo } from './types';
+
+const markdown = new MarkdownIt();
 
 export function denormalizeTodo(item: ExternalSystemItem): ExternalTodo {
   return {
     id: item.id.devrev,
-    body: item.data.body,
+    body: typeof item.data.body === 'string'
+      ? item.data.body
+      : markdown.render((item.data.body?.content ?? []).map((part: string | { fallback_record_name?: string; id: string }) =>
+        typeof part === 'string' ? part : part.fallback_record_name ?? part.id
+      ).join('')),
     creator: item.data.creator,
     owner: item.data.owner,
     title: item.data.title,

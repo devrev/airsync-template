@@ -74,7 +74,7 @@
                   "primary_external_field": "body",
                   "reverse": true,
                   "transformation_method_for_set": {
-                    "transformation_method": "use_directly"
+                    "transformation_method": "use_rich_text"
                   }
                 },
                 "created_by_id": {

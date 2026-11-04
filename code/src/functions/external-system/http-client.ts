@@ -46,8 +46,8 @@ const TODOS: ExternalTodo[] = [
 ];
 
 const ATTACHMENTS: ExternalAttachment[] = [
-  { id: 'att-1', url: 'https://www.devrev.ai/favicon.ico', file_name: 'devrev-icon.ico', author_id: 'user-1', parent_id: 'todo-1' },
-  { id: 'att-2', url: 'https://www.devrev.ai/favicon.ico', file_name: 'devrev-icon.ico', author_id: 'user-2', parent_id: 'todo-5' },
+  { id: 'att-1', url: 'https://raw.githubusercontent.com/devrev/airsync-template/03ab27d406c3afd3286ae8f06a9de48ab9d96664/README.md', file_name: 'airsync-template-readme.md', author_id: 'user-1', parent_id: 'todo-1' },
+  { id: 'att-2', url: 'https://raw.githubusercontent.com/devrev/airsync-template/03ab27d406c3afd3286ae8f06a9de48ab9d96664/README.md', file_name: 'airsync-template-readme.md', author_id: 'user-2', parent_id: 'todo-5' },
 ];
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,8 @@
 import { ExternalSyncUnit, NormalizedAttachment, NormalizedItem } from '@devrev/airsync-sdk';
+import TurndownService from 'turndown';
 import { ExternalAttachment, ExternalTodo, ExternalTodoList, ExternalUser } from './types';
+
+const turndown = new TurndownService();
 
 // TODO: Replace with your actual normalization functions that will be used to
 // normalize the data received from the external system. You can modify the
@@ -25,7 +28,7 @@ export function normalizeTodo(item: ExternalTodo): NormalizedItem {
     created_date: item.created_date,
     modified_date: item.modified_date,
     data: {
-      body: item.body,
+      body: [turndown.turndown(item.body)],
       creator: item.creator,
       owner: item.owner,
       title: item.title,
@@ -53,5 +56,6 @@ export function normalizeAttachment(item: ExternalAttachment): NormalizedAttachm
     file_name: item.file_name,
     author_id: item.author_id,
     parent_id: item.parent_id,
+    inline: false,
   };
 }
