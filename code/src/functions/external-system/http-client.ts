@@ -28,21 +28,21 @@ const TODO_LISTS: ExternalTodoList[] = [
 ];
 
 const TODOS: ExternalTodo[] = [
-  { id: 'todo-1',  created_date: '2018-06-01T08:00:00Z', modified_date: '2018-06-01T08:00:00Z', title: 'Set up development environment', body: '<p>Install Node.js, configure editor, clone repos.</p>', creator: 'user-1', owner: 'user-1' },
-  { id: 'todo-2',  created_date: '2019-09-15T10:00:00Z', modified_date: '2019-09-15T10:00:00Z', title: 'Write project proposal', body: '<p>Draft the initial project proposal document.</p>', creator: 'user-2', owner: 'user-2' },
-  { id: 'todo-3',  created_date: '2020-02-20T09:00:00Z', modified_date: '2020-02-20T09:00:00Z', title: 'Design database schema', body: '<p>Define entities, relationships and indexes.</p>', creator: 'user-1', owner: 'user-3' },
-  { id: 'todo-4',  created_date: '2021-05-10T14:00:00Z', modified_date: '2021-05-10T14:00:00Z', title: 'Implement authentication', body: '<p>Add JWT-based authentication to the API.</p>', creator: 'user-3', owner: 'user-4' },
-  { id: 'todo-5',  created_date: '2022-01-18T11:30:00Z', modified_date: '2022-03-05T16:00:00Z', title: 'Add unit tests', body: '<p>Achieve 80% test coverage for the core module.</p>', creator: 'user-2', owner: 'user-5' },
-  { id: 'todo-6',  created_date: '2022-08-22T08:00:00Z', modified_date: '2023-02-14T09:00:00Z', title: 'Performance profiling', body: '<p>Profile API endpoints and fix bottlenecks.</p>', creator: 'user-4', owner: 'user-4' },
-  { id: 'todo-7',  created_date: '2023-04-05T10:00:00Z', modified_date: '2023-07-01T13:00:00Z', title: 'Integrate third-party payment provider', body: '<p>Connect Stripe for billing.</p>', creator: 'user-5', owner: 'user-6' },
-  { id: 'todo-8',  created_date: '2023-11-01T08:30:00Z', modified_date: '2024-02-10T10:00:00Z', title: 'Migrate to TypeScript', body: '<p>Convert remaining JS files to TypeScript.</p>', creator: 'user-6', owner: 'user-7' },
-  { id: 'todo-9',  created_date: '2024-03-12T09:00:00Z', modified_date: '2024-06-20T15:00:00Z', title: 'Implement dark mode', body: '<p>Add dark mode toggle and persist preference.</p>', creator: 'user-7', owner: 'user-8' },
-  { id: 'todo-10', created_date: '2024-07-01T11:00:00Z', modified_date: '2024-09-30T12:00:00Z', title: 'Set up CI/CD pipeline', body: '<p>Configure GitHub Actions for build and deploy.</p>', creator: 'user-8', owner: 'user-9' },
-  { id: 'todo-11', created_date: '2024-10-15T08:00:00Z', modified_date: '2025-01-08T09:30:00Z', title: 'Refactor API error handling', body: '<p>Standardise error responses across all endpoints.</p>', creator: 'user-9', owner: 'user-10' },
-  { id: 'todo-12', created_date: '2025-02-01T10:00:00Z', modified_date: '2025-03-15T11:00:00Z', title: 'Add search functionality', body: '<p>Implement full-text search with filters.</p>', creator: 'user-10', owner: 'user-1' },
-  { id: 'todo-13', created_date: '2025-05-20T09:00:00Z', modified_date: '2025-07-10T14:00:00Z', title: 'Optimise database queries', body: '<p>Add missing indexes and rewrite slow queries.</p>', creator: 'user-1', owner: 'user-2' },
-  { id: 'todo-14', created_date: '2025-09-01T08:00:00Z', modified_date: '2025-11-20T16:30:00Z', title: 'Write API documentation', body: '<p>Document all public endpoints using OpenAPI spec.</p>', creator: 'user-2', owner: 'user-3' },
-  { id: 'todo-15', created_date: '2026-01-10T09:00:00Z', modified_date: '2026-03-01T10:00:00Z', title: 'Launch v2.0', body: '<p>Final QA pass and production deployment.</p>', creator: 'user-3', owner: 'user-4' },
+  { id: 'todo-1',  created_date: '2018-06-01T08:00:00Z', modified_date: '2018-06-01T08:00:00Z', title: 'Set up development environment', body: 'Install Node.js, configure editor, clone repos.', creator: 'user-1', owner: 'user-1' },
+  { id: 'todo-2',  created_date: '2019-09-15T10:00:00Z', modified_date: '2019-09-15T10:00:00Z', title: 'Write project proposal', body: 'Draft the initial project proposal document.', creator: 'user-2', owner: 'user-2' },
+  { id: 'todo-3',  created_date: '2020-02-20T09:00:00Z', modified_date: '2020-02-20T09:00:00Z', title: 'Design database schema', body: 'Define entities, relationships and indexes.', creator: 'user-1', owner: 'user-3' },
+  { id: 'todo-4',  created_date: '2021-05-10T14:00:00Z', modified_date: '2021-05-10T14:00:00Z', title: 'Implement authentication', body: 'Add JWT-based authentication to the API.', creator: 'user-3', owner: 'user-4' },
+  { id: 'todo-5',  created_date: '2022-01-18T11:30:00Z', modified_date: '2022-03-05T16:00:00Z', title: 'Add unit tests', body: 'Achieve 80% test coverage for the core module.', creator: 'user-2', owner: 'user-5' },
+  { id: 'todo-6',  created_date: '2022-08-22T08:00:00Z', modified_date: '2023-02-14T09:00:00Z', title: 'Performance profiling', body: 'Profile API endpoints and fix bottlenecks.', creator: 'user-4', owner: 'user-4' },
+  { id: 'todo-7',  created_date: '2023-04-05T10:00:00Z', modified_date: '2023-07-01T13:00:00Z', title: 'Integrate third-party payment provider', body: 'Connect Stripe for billing.', creator: 'user-5', owner: 'user-6' },
+  { id: 'todo-8',  created_date: '2023-11-01T08:30:00Z', modified_date: '2024-02-10T10:00:00Z', title: 'Migrate to TypeScript', body: 'Convert remaining JS files to TypeScript.', creator: 'user-6', owner: 'user-7' },
+  { id: 'todo-9',  created_date: '2024-03-12T09:00:00Z', modified_date: '2024-06-20T15:00:00Z', title: 'Implement dark mode', body: 'Add dark mode toggle and persist preference.', creator: 'user-7', owner: 'user-8' },
+  { id: 'todo-10', created_date: '2024-07-01T11:00:00Z', modified_date: '2024-09-30T12:00:00Z', title: 'Set up CI/CD pipeline', body: 'Configure GitHub Actions for build and deploy.', creator: 'user-8', owner: 'user-9' },
+  { id: 'todo-11', created_date: '2024-10-15T08:00:00Z', modified_date: '2025-01-08T09:30:00Z', title: 'Refactor API error handling', body: 'Standardise error responses across all endpoints.', creator: 'user-9', owner: 'user-10' },
+  { id: 'todo-12', created_date: '2025-02-01T10:00:00Z', modified_date: '2025-03-15T11:00:00Z', title: 'Add search functionality', body: 'Implement full-text search with filters.', creator: 'user-10', owner: 'user-1' },
+  { id: 'todo-13', created_date: '2025-05-20T09:00:00Z', modified_date: '2025-07-10T14:00:00Z', title: 'Optimise database queries', body: 'Add missing indexes and rewrite slow queries.', creator: 'user-1', owner: 'user-2' },
+  { id: 'todo-14', created_date: '2025-09-01T08:00:00Z', modified_date: '2025-11-20T16:30:00Z', title: 'Write API documentation', body: 'Document all public endpoints using OpenAPI spec.', creator: 'user-2', owner: 'user-3' },
+  { id: 'todo-15', created_date: '2026-01-10T09:00:00Z', modified_date: '2026-03-01T10:00:00Z', title: 'Launch v2.0', body: 'Final QA pass and production deployment.', creator: 'user-3', owner: 'user-4' },
 ];
 
 const ATTACHMENTS: ExternalAttachment[] = [

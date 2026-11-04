@@ -12,13 +12,13 @@ const todo: ExternalTodo = {
   created_date: '2026-01-01T00:00:00Z',
   modified_date: '2026-01-01T00:00:00Z',
   title: 'Test todo',
-  body: '<p>Hello <strong>world</strong> &amp; <a href="https://example.com">friends</a>.</p>',
+  body: 'Hello **world** & [friends](https://example.com).',
   creator: 'user-1',
   owner: 'user-1',
 };
 
 describe('Todo rich text', () => {
-  it('converts HTML to the rich-text Markdown array expected by AirSync', () => {
+  it('wraps Markdown in the rich-text array expected by AirSync', () => {
     expect(normalizeTodo(todo).data).toMatchObject({
       body: ['Hello **world** & [friends](https://example.com).'],
     });
@@ -28,21 +28,30 @@ describe('Todo rich text', () => {
   });
 
   it('preserves paragraphs and lists', () => {
-    expect(normalizeTodo({ ...todo, body: '<p>First</p><p>Second</p><ul><li>One</li><li>Two</li></ul>' }).data)
-      .toMatchObject({ body: ['First\n\nSecond\n\n*   One\n*   Two'] });
+    expect(normalizeTodo({ ...todo, body: 'First\n\nSecond\n\n- One\n- Two' }).data)
+      .toMatchObject({ body: ['First\n\nSecond\n\n- One\n- Two'] });
   });
 
   it('accepts an empty body', () => {
     expect(normalizeTodo({ ...todo, body: '' }).data).toMatchObject({ body: [''] });
   });
 
-  it('converts reverse-sync rich text back to HTML', () => {
+  it('loads reverse-sync rich text as Markdown', () => {
     const item = {
       ...todo,
       id: { devrev: 'work-1' },
       data: { ...todo, body: { type: 'rich_text', content: ['Hello **world**.'] } },
     } as ExternalSystemItem;
-    expect(denormalizeTodo(item).body).toBe('<p>Hello <strong>world</strong>.</p>\n');
+    expect(denormalizeTodo(item).body).toBe('Hello **world**.');
+  });
+
+  it('uses reference names when loading mixed rich-text content', () => {
+    const item = {
+      ...todo,
+      id: { devrev: 'work-1' },
+      data: { ...todo, body: { type: 'rich_text', content: ['Hello ', { id: 'user-1', fallback_record_name: 'Alice' }, ' and ', { id: 'user-2' }] } },
+    } as ExternalSystemItem;
+    expect(denormalizeTodo(item).body).toBe('Hello Alice and user-2');
   });
 
   it('preserves legacy string bodies when loading', () => {

@@ -14,11 +14,6 @@ See the [AirSync snap-in documentation](https://developer.devrev.ai/airsync) for
 
 The template uses `@devrev/airsync-sdk` and requires Node.js 20 or newer.
 
-Todo HTML bodies are converted to Markdown rich-text arrays and mapped with
-`use_rich_text`. Reverse sync renders rich text back to HTML. The sample
-attachments download a README pinned to a repository commit; replace these URLs
-with downloadable files from your external system.
-
 ## Local Fixture Testing
 
 From the `code/` directory, you can run the built-in fixture runner to test the
@@ -35,6 +30,3 @@ The runner reads `code/.env` and resolves `${TODO_API_KEY}` in fixture files,
 so copy `code/.env.example` before running the fixtures.
 The fixture runner and local test server set `AIRSYNC_LOCAL_DEVELOPMENT=1`
 to enable local logging and artifact copies in `code/extracted_files/`.
-
-Run the rich-text and attachment fixture regression tests from `code/` with
-`npm test -- --runInBand`.
