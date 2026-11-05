@@ -25,7 +25,7 @@ export function normalizeTodo(item: ExternalTodo): NormalizedItem {
     created_date: item.created_date,
     modified_date: item.modified_date,
     data: {
-      body: item.body,
+      body: [item.body],
       creator: item.creator,
       owner: item.owner,
       title: item.title,
@@ -53,5 +53,6 @@ export function normalizeAttachment(item: ExternalAttachment): NormalizedAttachm
     file_name: item.file_name,
     author_id: item.author_id,
     parent_id: item.parent_id,
+    inline: false,
   };
 }
