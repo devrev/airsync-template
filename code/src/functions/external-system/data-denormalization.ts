@@ -3,7 +3,7 @@ import { ExternalAttachment, ExternalTodo } from './types';
 
 export function denormalizeTodo(item: ExternalSystemItem): ExternalTodo {
   return {
-    id: item.id.devrev,
+    id: item.id.external ?? item.id.devrev,
     body: typeof item.data.body === 'string'
       ? item.data.body
       : (item.data.body?.content ?? []).map((part: string | { fallback_record_name?: string; id: string }) =>

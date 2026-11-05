@@ -1,4 +1,4 @@
-import { processExtractionTask } from '@devrev/airsync-sdk';
+import { processExtractionTask, SyncMapperRecordTargetType } from '@devrev/airsync-sdk';
 
 import { normalizeAttachment, normalizeTodo, normalizeUser } from '../../external-system/data-normalization';
 import { HttpClient } from '../../external-system/http-client';
@@ -69,7 +69,19 @@ processExtractionTask<ExtractorState>({
         continue;
       }
 
-      const items = await itemTypeToExtract.extractFunction(httpClient);
+      let items = await itemTypeToExtract.extractFunction(httpClient);
+      if (itemTypeToExtract.name === 'attachments') {
+        const unmapped = [];
+        for (const item of items as ExternalAttachment[]) {
+          const mapped = await adapter.mappers.getByExternalId({
+            sync_unit: adapter.event.payload.event_context.sync_unit,
+            external_id: item.id,
+            target_type: SyncMapperRecordTargetType.ARTIFACT,
+          });
+          if (!mapped?.sync_mapper_record) unmapped.push(item);
+        }
+        items = unmapped;
+      }
       await adapter.getRepo(itemTypeToExtract.name)?.push(items);
       adapter.state[itemTypeToExtract.name].completed = true;
     }
