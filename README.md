@@ -18,6 +18,27 @@ If the first run is missing, run **Set up the repository** against `main`.
 If repository policy prevents Actions from opening PRs, open a PR to `main` from the
 setup branch named in the workflow summary.
 
+## Private repository workflows
+
+In a private DevRev connector checkout, run these commands on a branch and review the
+generated files before merging. You can enable either workflow independently.
+
+```bash
+python3 .github/scripts/enable_private_workflows.py review
+python3 .github/scripts/enable_private_workflows.py marketplace
+```
+
+- **Connector PR review** uses the [shared review workflow](https://github.com/devrev/connectors-codegen/blob/main/repo-docs/connector-pr-review.md).
+  Confirm Actions access and AWS OIDC trust for the repository. Check an automatic
+  review on a same-repository PR and rerun it with `/connector-review`.
+- **DEV Marketplace drafts** use the [shared submission action](https://github.com/devrev/github-actions/tree/main/create-marketplace-submission).
+  Confirm access to the action and the `READ_GITHUB_ACTIONS_RELEASES` and `DEVREV_DEV_PAT`
+  secrets. Review the DEV slugs in `marketplace.yaml`. Create the `marketplace-submission`
+  label if needed and apply it to a PR with snap-in changes before merging into `main`.
+
+The installer keeps existing workflow files and Marketplace configuration. If another
+automated reviewer is present, replace its workflow when adopting the shared reviewer.
+
 ## Documentation
 
 See the [AirSync snap-in documentation](https://developer.devrev.ai/airsync) for development guidance.

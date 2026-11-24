@@ -1,5 +1,6 @@
 """Exercise repository setup using copies of the template and a local Git remote."""
 
+import json
 import os
 import shutil
 import subprocess
@@ -139,6 +140,56 @@ class SetupTest(unittest.TestCase):
         self.initialize(name)
         self.assertIn(SETUP_PR, self.publish(**variables).stdout)
         self.assertEqual(self.git("ls-remote", "origin", setup_ref), first)
+
+
+    def enable_workflows(self, *workflows, owner="devrev", visibility="PRIVATE", check=True):
+        gh_stub = self.root / "gh"
+        gh_stub.write_text('#!/bin/sh\nprintf "%s\\n" "$REPO_METADATA"\n')
+        gh_stub.chmod(0o755)
+        repository = {"nameWithOwner": f"{owner}/airsync-demo-snap-in", "visibility": visibility}
+        return self.command(
+            "python3", str(SCRIPTS / "enable_private_workflows.py"), *workflows,
+            env={
+                **os.environ,
+                "PATH": str(self.root) + os.pathsep + os.environ["PATH"],
+                "REPO_METADATA": json.dumps(repository),
+            },
+            check=check,
+        )
+
+    def test_private_workflows_are_opt_in_and_existing_files_survive(self):
+        self.initialize("airsync-demo-snap-in")
+        workflows = self.repo / ".github/workflows"
+        review = workflows / "claude-code-review.yml"
+        submission = workflows / "create-marketplace-submission.yml"
+        config = self.repo / "marketplace.yaml"
+        self.assertFalse(review.exists())
+        self.assertFalse(submission.exists())
+        self.assertFalse(config.exists())
+
+        self.enable_workflows("review")
+        self.assertIn("devrev/connectors-codegen/.github/workflows/connector-review.yml", review.read_text())
+        self.assertFalse(submission.exists())
+        self.assertFalse(config.exists())
+
+        review.write_text("Existing review workflow\n")
+        self.enable_workflows("review", "marketplace")
+        self.assertEqual(review.read_text(), "Existing review workflow\n")
+        self.assertIn("Create DEV draft", submission.read_text())
+        self.assertIn("marketplace_listing_slug: airsync-demo-snap-in", config.read_text())
+        self.assertIn("snap_in_package_slug: airsync-demo-snap-in", config.read_text())
+        config.write_text("Existing Marketplace configuration\n")
+        self.enable_workflows("marketplace")
+        self.assertEqual(config.read_text(), "Existing Marketplace configuration\n")
+
+    def test_rejects_public_or_external_workflow_install(self):
+        for owner, visibility in (("devrev", "PUBLIC"), ("external", "PRIVATE")):
+            with self.subTest(owner=owner, visibility=visibility):
+                result = self.enable_workflows("review", "marketplace", owner=owner, visibility=visibility, check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("require a private repository in devrev", result.stderr)
+        self.assertFalse((self.repo / ".github/workflows/claude-code-review.yml").exists())
+        self.assertFalse((self.repo / "marketplace.yaml").exists())
 
 
 if __name__ == "__main__":
