@@ -4,9 +4,19 @@ This repository provides a template to implement an AirSync snap-in that imports
 
 ## Usage
 
-1. Click "Use this template" > "Create a new repository"
-2. Name your repository `airdrop-<external-system-name>-snap-in` (e.g., `airdrop-github-snap-in`)
-3. Clone and follow the setup instructions in the generated README
+1. Select **Use this template** > **Create a new repository**.
+2. Name the repository `airdrop-<external-system-name>-snap-in` or `airsync-<external-system-name>-snap-in`.
+3. Wait for **Set up the repository** in Actions. If it opens a setup PR, merge the PR before cloning.
+4. Clone the initialized repository and follow its README.
+
+Setup uses the GitHub actor as the initial maintainer. Set the `AIRSYNC_MAINTAINERS` and
+`AIRSYNC_OWNING_TEAM` Actions variables or supply the corresponding inputs when running
+the workflow manually. Give those users and the owning team write access so GitHub can request
+their review through CODEOWNERS.
+
+If the first run is missing, run **Set up the repository** against `main`.
+If repository policy prevents Actions from opening PRs, open a PR to `main` from the
+setup branch named in the workflow summary.
 
 ## Documentation
 

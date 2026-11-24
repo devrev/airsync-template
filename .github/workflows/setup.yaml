@@ -1,67 +1,48 @@
 name: Set up the repository
+
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      maintainers:
+        description: Space-separated GitHub maintainer logins
+        type: string
+      owning_team:
+        description: GitHub owning team in organization/team-slug format
+        type: string
+
+concurrency:
+  group: airsync-repository-setup
+  cancel-in-progress: false
+
 jobs:
-  cleanup:
-    name: Set up the repository
+  setup:
+    if: >-
+      github.repository != 'devrev/airsync-template' &&
+      !github.event.repository.fork &&
+      github.ref == 'refs/heads/main' &&
+      github.event.repository.default_branch == 'main' &&
+      (startsWith(github.event.repository.name, 'airdrop-') || startsWith(github.event.repository.name, 'airsync-')) &&
+      endsWith(github.event.repository.name, '-snap-in')
     runs-on: ubuntu-latest
-    if: github.event.repository.name != 'airdrop-template'
     permissions:
       contents: write
+      pull-requests: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Replace templates
-        run: |
-          shopt -s dotglob
-
-          export LC_CTYPE=C
-          export LANG=C
-
-          # Project name is lowercase repository name (used in configs)
-          REPO_NAME="${GITHUB_REPOSITORY,,}" # Of the form owner/repo
-          REPO_NAME="${REPO_NAME##*/}" # Just the repo name
-
-          # Extract EXTERNAL_SYSTEM from the project name
-          # Expected format: airdrop-{EXTERNAL_SYSTEM}-snap-in where {EXTERNAL_SYSTEM} can be multiple words with dashes
-          EXTERNAL_SYSTEM="TODO"
-          if [[ "$REPO_NAME" =~ ^airdrop-(.+)-snap-in$ ]]; then
-            EXTERNAL_SYSTEM="${BASH_REMATCH[1]}"
-          fi
-
-          # Create pretty version of external system name with proper capitalization
-          PRETTY_EXTERNAL_SYSTEM="$(echo "$EXTERNAL_SYSTEM" | sed 's/-/ /g; s/\b\(.\)/\u\1/g')"
-          ESCAPED_PRETTY_EXTERNAL_SYSTEM="$(echo "$PRETTY_EXTERNAL_SYSTEM" | sed 's/ /\\ /g')"
-
-          echo "Project name: '$REPO_NAME'"
-          echo "External system name: '$EXTERNAL_SYSTEM'"
-          echo "Pretty external system name: '$PRETTY_EXTERNAL_SYSTEM'"
-
-          echo "Replacing TODO placeholders in manifest.yaml and README.md"
-          sed -i "s/Todo/$ESCAPED_PRETTY_EXTERNAL_SYSTEM/g" manifest.yaml
-          sed -i "s/Todo/$ESCAPED_PRETTY_EXTERNAL_SYSTEM/g" .github/templates/README.md
-          sed -i "s/airdrop-todo-snap-in/airdrop-$EXTERNAL_SYSTEM-snap-in/g" manifest.yaml
-
-          echo "Moving template files to the root of the repository"
-          mv -f .github/templates/* .
-          rm -rf .github
-          cp .cursor/mcp.json .mcp.json
-
-          # Create CLAUDE.md from initial-mapping.mdc, removing the header
-          sed '1,/^---$/d' initial-mapping.mdc | sed '1,/^$/d' > CLAUDE.md
-
-      - name: Commit
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          git commit --amend --no-edit
-
-      - name: Push
-        uses: ad-m/github-push-action@v0.8.0
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          force: true
+          ref: refs/heads/main
+
+      - name: Apply connector defaults
+        env:
+          AIRSYNC_MAINTAINERS: ${{ inputs.maintainers || vars.AIRSYNC_MAINTAINERS || github.actor }}
+          AIRSYNC_OWNING_TEAM: ${{ inputs.owning_team || vars.AIRSYNC_OWNING_TEAM }}
+        run: |
+          python3 .github/scripts/initialize.py "$GITHUB_REPOSITORY" \
+            --maintainers="$AIRSYNC_MAINTAINERS" --owning-team="$AIRSYNC_OWNING_TEAM"
+
+      - name: Publish initialization
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/publish-setup.sh
