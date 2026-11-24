@@ -143,8 +143,13 @@ class SetupTest(unittest.TestCase):
 
 
     def enable_workflows(self, *workflows, owner="devrev", visibility="PRIVATE", check=True):
+        origin = f"git@github.com:{owner}/airsync-demo-snap-in.git"
+        self.git("init", "-q")
+        self.git("config", "remote.origin.url", origin)
         gh_stub = self.root / "gh"
-        gh_stub.write_text('#!/bin/sh\nprintf "%s\\n" "$REPO_METADATA"\n')
+        gh_stub.write_text(
+            '#!/bin/sh\n[ "$3" = "$EXPECTED_ORIGIN" ] || exit 1\nprintf "%s\\n" "$REPO_METADATA"\n'
+        )
         gh_stub.chmod(0o755)
         repository = {"nameWithOwner": f"{owner}/airsync-demo-snap-in", "visibility": visibility}
         return self.command(
@@ -152,6 +157,7 @@ class SetupTest(unittest.TestCase):
             env={
                 **os.environ,
                 "PATH": str(self.root) + os.pathsep + os.environ["PATH"],
+                "EXPECTED_ORIGIN": origin,
                 "REPO_METADATA": json.dumps(repository),
             },
             check=check,

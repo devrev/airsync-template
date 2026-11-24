@@ -2,8 +2,8 @@
 
 import argparse
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 TEMPLATES = Path(".github/templates")
 WORKFLOWS = {
@@ -26,8 +26,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("workflows", choices=WORKFLOWS, nargs="+")
     args = parser.parse_args()
+    origin = subprocess.check_output(["git", "remote", "get-url", "origin"], text=True).strip()
     result = subprocess.check_output(
-        ["gh", "repo", "view", "--json", "nameWithOwner,visibility"], text=True,
+        ["gh", "repo", "view", origin, "--json", "nameWithOwner,visibility"], text=True,
     )
     repository = json.loads(result)
     owner, slug = repository["nameWithOwner"].lower().split("/", 1)
