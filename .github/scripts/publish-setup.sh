@@ -16,7 +16,7 @@ git -c user.name='github-actions[bot]' \
 setup_pr=""
 if git ls-remote --exit-code --heads origin "$setup_ref" >/dev/null; then
     setup_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base main --head "$setup_branch" \
-        --json url --jq '.[0].url // empty')
+        --json isCrossRepository,url --jq 'map(select(.isCrossRepository == false)) | .[0].url // empty')
     if [[ -z "$setup_pr" ]]; then
         git fetch --no-tags origin "$setup_ref"
         if ! git diff --quiet FETCH_HEAD HEAD; then
