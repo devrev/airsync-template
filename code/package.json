@@ -59,7 +59,7 @@
   },
   "dependencies": {
     "@devrev/airsync-sdk": "2.0.0",
-    "@devrev/typescript-sdk": "1.1.78",
+    "@devrev/typescript-sdk": "1.1.79",
     "axios": "^1.20.0",
     "dotenv": "^16.0.3",
     "jiti": "2.5.1",
