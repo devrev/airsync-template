@@ -23,6 +23,9 @@ class SetupTest(unittest.TestCase):
             shutil.copytree(TEMPLATE / directory, self.repo / directory)
         for name in ("README.md", "manifest.yaml", ".github/CODEOWNERS"):
             shutil.copyfile(TEMPLATE / name, self.repo / name)
+        self.script = self.repo / ".github/scripts/initialize.py"
+        self.script.parent.mkdir()
+        shutil.copyfile(SCRIPTS / "initialize.py", self.script)
 
     def command(self, *args, env=None, check=True):
         return subprocess.run(
@@ -31,7 +34,7 @@ class SetupTest(unittest.TestCase):
 
     def initialize(self, name, maintainers="alice @bob", team="@example/integrations", check=True):
         return self.command(
-            "python3", str(SCRIPTS / "initialize.py"), f"example/{name}",
+            "python3", str(self.script), f"example/{name}",
             "--maintainers", maintainers, "--owning-team", team, check=check,
         )
 
@@ -56,7 +59,7 @@ class SetupTest(unittest.TestCase):
 
     def test_airdrop_name_and_maintainer(self):
         name = "airdrop-demo-snap-in"
-        self.command("python3", str(SCRIPTS / "initialize.py"), f"example/{name}", "--maintainers", "alice")
+        self.command("python3", str(self.script), f"example/{name}", "--maintainers", "alice")
         self.assertIn(f"slug: {name}", (self.repo / "manifest.yaml").read_text())
         self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice\n")
 
@@ -66,6 +69,57 @@ class SetupTest(unittest.TestCase):
         self.assertIn("Specify at least one GitHub maintainer", result.stderr)
         self.assertTrue((self.repo / ".github/templates/README.md").exists())
         self.assertIn("airdrop-todo-snap-in", (self.repo / "manifest.yaml").read_text())
+
+    def test_rejects_repository_without_owner(self):
+        result = self.command(
+            "python3", str(self.script), "/airsync-demo-snap-in", "--maintainers", "alice", check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("owner/name", result.stderr)
+        self.assertTrue((self.repo / ".github/templates/README.md").exists())
+
+    def test_requires_checkout_root(self):
+        result = subprocess.run(
+            ["python3", str(self.script)], cwd=self.repo / ".github", text=True, capture_output=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("from the connector repository root", result.stderr)
+        self.assertTrue((self.repo / ".github/templates/README.md").exists())
+
+    def test_retry_after_interrupted_write_keeps_rendered_name(self):
+        fail_after_manifest = """
+import runpy
+import sys
+from pathlib import Path
+
+replace = Path.replace
+
+def fail_on_readme(self, destination):
+    if destination == Path('README.md'):
+        raise PermissionError('simulated write failure')
+    return replace(self, destination)
+
+Path.replace = fail_on_readme
+sys.argv.pop(0)
+runpy.run_path(sys.argv[0], run_name='__main__')
+"""
+        name = "airsync-todoist-snap-in"
+        result = self.command(
+            "python3", "-c", fail_after_manifest, str(self.script), f"example/{name}",
+            "--maintainers", "alice", check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("simulated write failure", result.stderr)
+        marker = self.repo / ".github/templates/README.md"
+        self.assertTrue(marker.exists())
+        manifest = self.repo / "manifest.yaml"
+        first_write = manifest.read_text()
+        self.assertIn("\nname: Todoist\n", first_write)
+
+        self.initialize(name)
+
+        self.assertEqual(manifest.read_text(), first_write)
+        self.assertFalse(marker.exists())
 
     def initialize_from_origin(self, *options, owner="devrev", visibility="PRIVATE", check=True):
         origin = f"git@github.com:{owner}/airsync-demo-snap-in.git"
@@ -93,7 +147,7 @@ esac
         gh_stub.chmod(0o755)
         repository = {"nameWithOwner": f"{owner}/airsync-demo-snap-in", "visibility": visibility}
         return self.command(
-            "python3", str(SCRIPTS / "initialize.py"), *options,
+            "python3", str(self.script), *options,
             env={
                 **os.environ,
                 "PATH": str(self.root) + os.pathsep + os.environ["PATH"],
@@ -103,21 +157,17 @@ esac
             check=check,
         )
 
-    def test_detects_origin_maintainer_and_devrev_team(self):
+    def test_detects_origin_and_maintainer_without_a_team(self):
         self.initialize_from_origin()
         self.assertIn("slug: airsync-demo-snap-in", (self.repo / "manifest.yaml").read_text())
-        self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice @devrev/connector_team\n")
+        self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice\n")
         self.assertFalse((self.repo / ".github/workflows/claude-code-review.yml").exists())
         self.assertFalse((self.repo / ".github/workflows/create-marketplace-submission.yml").exists())
         self.assertFalse((self.repo / "marketplace.yaml").exists())
 
-    def test_can_omit_devrev_team(self):
-        self.initialize_from_origin("--no-owning-team")
-        self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice\n")
-
-    def test_can_override_devrev_team(self):
-        self.initialize_from_origin("--owning-team", "devrev/another-team")
-        self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice @devrev/another-team\n")
+    def test_can_add_connector_team(self):
+        self.initialize_from_origin("--owning-team", "devrev/connector_team")
+        self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice @devrev/connector_team\n")
 
     def test_initializes_with_both_private_workflows_and_preserves_existing_files(self):
         self.initialize_from_origin("--enable-review", "--enable-marketplace")
@@ -146,6 +196,35 @@ esac
         self.assertTrue((self.repo / ".github/templates/README.md").exists())
         self.assertFalse((self.repo / ".github/workflows/claude-code-review.yml").exists())
         self.assertFalse((self.repo / "marketplace.yaml").exists())
+
+    def test_missing_workflow_source_leaves_setup_unchanged_and_can_retry(self):
+        source = self.repo / ".github/templates/workflows/create-marketplace-submission.yml"
+        content = source.read_bytes()
+        source.unlink()
+        manifest = self.repo / "manifest.yaml"
+        uninitialized = manifest.read_bytes()
+
+        result = self.initialize_from_origin("--enable-review", "--enable-marketplace", check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(source.name, result.stderr)
+        self.assertEqual(manifest.read_bytes(), uninitialized)
+        self.assertTrue((self.repo / ".github/templates/README.md").exists())
+        self.assertFalse((self.repo / ".github/workflows/claude-code-review.yml").exists())
+        self.assertFalse((self.repo / "marketplace.yaml").exists())
+
+        source.write_bytes(content)
+        self.initialize_from_origin("--enable-review", "--enable-marketplace")
+        self.assertFalse((self.repo / ".github/templates/README.md").exists())
+        self.assertTrue((self.repo / ".github/workflows" / source.name).is_file())
+
+    def test_rejects_directory_as_existing_marketplace_configuration(self):
+        (self.repo / "marketplace.yaml").mkdir()
+        result = self.initialize_from_origin("--enable-marketplace", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Expected a file at marketplace.yaml", result.stderr)
+        self.assertTrue((self.repo / ".github/templates/README.md").exists())
+        self.assertFalse((self.repo / ".github/workflows/create-marketplace-submission.yml").exists())
 
 
 if __name__ == "__main__":
