@@ -70,7 +70,3 @@ The script will prompt you for organization and email credentials.
 ## Start an Import
 
 After deploying, go to DevRev UI: `AirSync` > `Start AirSync` > `<your snap-in>`
-
-## Repository workflows
-
-Private DevRev repositories can enable [shared PR review and DEV Marketplace drafts](https://github.com/devrev/airsync-template#private-repository-workflows).

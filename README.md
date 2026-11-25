@@ -20,26 +20,6 @@ GitHub login to CODEOWNERS. Pass `--owning-team org/team-slug` to add a team.
 
 Commit the setup changes together on your working branch and follow the generated README.
 
-## Private repository workflows
-
-In a private DevRev repository, pass either option or both to the same initializer
-to include the selected workflows in the setup commit.
-
-```bash
-python3 .github/scripts/initialize.py --enable-review --enable-marketplace
-```
-
-- **Connector PR review** uses the [shared review workflow](https://github.com/devrev/connectors-codegen/blob/main/repo-docs/connector-pr-review.md).
-  Confirm Actions access and AWS OIDC trust for the repository. Check an automatic
-  review on a same-repository PR and rerun it with `/connector-review`.
-- **DEV Marketplace drafts** use the [shared submission action](https://github.com/devrev/github-actions/tree/main/create-marketplace-submission).
-  Confirm access to the action and the `READ_GITHUB_ACTIONS_RELEASES` and `DEVREV_DEV_PAT`
-  secrets. Review the DEV slugs in `marketplace.yaml`. Create the `marketplace-submission`
-  label if needed and apply it to a PR with snap-in changes before merging into `main`.
-
-The initializer keeps existing workflow files and Marketplace configuration. If another
-automated reviewer is present, replace its workflow when adopting the shared reviewer.
-
 ## Documentation
 
 See the [AirSync snap-in documentation](https://developer.devrev.ai/airsync) for development guidance.
