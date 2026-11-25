@@ -1,0 +1,30 @@
+name: Create marketplace submission
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  submit:
+    name: Create DEV draft
+    if: >-
+      github.repository_owner == 'devrev' &&
+      github.event.repository.private &&
+      github.event.pull_request.merged &&
+      contains(github.event.pull_request.labels.*.name, 'marketplace-submission')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create marketplace submission
+        uses: devrev/github-actions/create-marketplace-submission@create-marketplace-submission-v0.1.33
+        with:
+          code_ref_url: ${{ github.event.pull_request.url }}
+          github_token: ${{ github.token }}
+          read_actions_token: ${{ secrets.READ_GITHUB_ACTIONS_RELEASES }}
+        env:
+          DEVREV_PAT: ${{ secrets.DEVREV_DEV_PAT }}
+          GH_READ_PACKAGES_TOKEN: ${{ secrets.NPMJS_NPM_TOKEN }}

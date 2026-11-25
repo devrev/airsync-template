@@ -4,9 +4,21 @@ This repository provides a template to implement an AirSync snap-in that imports
 
 ## Usage
 
-1. Click "Use this template" > "Create a new repository"
-2. Name your repository `airdrop-<external-system-name>-snap-in` (e.g., `airdrop-github-snap-in`)
-3. Clone and follow the setup instructions in the generated README
+1. Select **Use this template** > **Create a new repository**.
+2. Name the repository `airsync-<external-system-name>-snap-in`.
+3. Clone the repository and switch to your working branch.
+
+With Python 3.9 or newer and an authenticated GitHub CLI, run the initializer
+from the repository root.
+
+```bash
+python3 .github/scripts/initialize.py
+```
+
+The initializer takes the connector name from the Git origin and adds your
+GitHub login to CODEOWNERS. Pass `--owning-team org/team-slug` to add a team.
+
+Commit the setup changes together on your working branch and follow the generated README.
 
 ## Documentation
 
