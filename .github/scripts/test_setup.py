@@ -1,4 +1,4 @@
-"""Exercise repository setup using copies of the template and a local Git remote."""
+"""Exercise the local initializer and private workflow installer."""
 
 import json
 import os
@@ -10,7 +10,6 @@ from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
 TEMPLATE = SCRIPTS.parents[1]
-SETUP_PR = "https://github.example/test/connector/pull/1"
 
 
 class SetupTest(unittest.TestCase):
@@ -29,9 +28,6 @@ class SetupTest(unittest.TestCase):
         return subprocess.run(
             args, cwd=self.repo, check=check, text=True, capture_output=True, env=env,
         )
-
-    def git(self, *args):
-        return self.command("git", *args).stdout.strip()
 
     def initialize(self, name, maintainers="alice @bob", team="@example/integrations", check=True):
         return self.command(
@@ -71,81 +67,13 @@ class SetupTest(unittest.TestCase):
         self.assertTrue((self.repo / ".github/templates/README.md").exists())
         self.assertIn("airdrop-todo-snap-in", (self.repo / "manifest.yaml").read_text())
 
-    def prepare_remote(self):
-        remote = self.root / "origin.git"
-        self.git("init", "-q", "--bare", "--initial-branch=main", str(remote))
-        self.git("init", "-q", "--initial-branch=main")
-        self.git("config", "user.name", "Test")
-        self.git("config", "user.email", "test@example.invalid")
-        self.git("config", "commit.gpgsign", "false")
-        self.git("add", "--all")
-        self.git("commit", "-qm", "Template")
-        self.git("remote", "add", "origin", str(remote))
-        self.git("push", "origin", "main")
-        return remote
-
-    def publish(self, **variables):
-        return self.command(
-            "bash", str(SCRIPTS / "publish-setup.sh"),
-            env={
-                **os.environ,
-                "GITHUB_REPOSITORY": "example/airdrop-demo-snap-in",
-                "GITHUB_STEP_SUMMARY": str(self.root / "summary"),
-                **variables,
-            },
-        )
-
-    def test_publishes_normal_commit_to_unprotected_main(self):
-        self.prepare_remote()
-        initial = self.git("rev-parse", "HEAD")
-        self.initialize("airdrop-demo-snap-in")
-        self.assertIn("Repository setup is on main.", self.publish().stdout)
-        self.assertEqual(self.git("rev-parse", "origin/main"), self.git("rev-parse", "HEAD"))
-        self.assertEqual(self.git("rev-parse", "HEAD^"), initial)
-        self.assertIn("already on main", self.publish().stdout)
-
-    def test_reuses_protected_branch_and_pull_request_on_retry(self):
-        remote = self.prepare_remote()
-        initial = self.git("rev-parse", "HEAD")
-        hook = remote / "hooks/update"
-        hook.write_text('#!/bin/sh\n[ "$1" != refs/heads/main ]\n')
-        hook.chmod(0o755)
-
-        stub = self.root / "gh"
-        stub.write_text(
-            "#!/bin/sh\n"
-            'case "$1 $2" in\n'
-            '  "pr list") if [ -f "$PR_CREATED" ]; then cat "$PR_CREATED"; fi ;;\n'
-            f'  "pr create") echo "{SETUP_PR}" | tee "$PR_CREATED" ;;\n'
-            "  *) exit 1 ;;\n"
-            "esac\n"
-        )
-        stub.chmod(0o755)
-        variables = {"PATH": str(self.root) + os.pathsep + os.environ["PATH"], "PR_CREATED": str(self.root / "pr")}
-        name = "airdrop-demo-snap-in"
-        self.initialize(name)
-        self.assertIn(SETUP_PR, self.publish(**variables).stdout)
-        setup_ref = "refs/heads/airsync/template-setup"
-        first = self.git("ls-remote", "origin", setup_ref)
-        self.assertTrue(first)
-        self.assertEqual(self.git("rev-parse", "origin/main"), initial)
-
-        self.git("reset", "--hard", initial)
-        hook.unlink()
-        (self.repo / "unrelated.txt").write_text("Change on main\n")
-        self.git("add", "unrelated.txt")
-        self.git("commit", "-qm", "Advance main")
-        self.git("push", "origin", "main")
-
-        self.initialize(name)
-        self.assertIn(SETUP_PR, self.publish(**variables).stdout)
-        self.assertEqual(self.git("ls-remote", "origin", setup_ref), first)
-
-
     def enable_workflows(self, *workflows, owner="devrev", visibility="PRIVATE", check=True):
         origin = f"git@github.com:{owner}/airsync-demo-snap-in.git"
-        self.git("init", "-q")
-        self.git("config", "remote.origin.url", origin)
+        git_stub = self.root / "git"
+        git_stub.write_text(
+            '#!/bin/sh\n[ "$*" = "remote get-url origin" ] || exit 1\nprintf "%s\\n" "$EXPECTED_ORIGIN"\n'
+        )
+        git_stub.chmod(0o755)
         gh_stub = self.root / "gh"
         gh_stub.write_text(
             '#!/bin/sh\n[ "$3" = "$EXPECTED_ORIGIN" ] || exit 1\nprintf "%s\\n" "$REPO_METADATA"\n'
