@@ -1,4 +1,4 @@
-"""Exercise the local initializer and private workflow installer."""
+"""Exercise local connector setup and workflow selection."""
 
 import json
 import os
@@ -56,7 +56,7 @@ class SetupTest(unittest.TestCase):
 
     def test_airdrop_name_and_maintainer(self):
         name = "airdrop-demo-snap-in"
-        self.initialize(name, maintainers="alice", team="")
+        self.command("python3", str(SCRIPTS / "initialize.py"), f"example/{name}", "--maintainers", "alice")
         self.assertIn(f"slug: {name}", (self.repo / "manifest.yaml").read_text())
         self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice\n")
 
@@ -67,7 +67,7 @@ class SetupTest(unittest.TestCase):
         self.assertTrue((self.repo / ".github/templates/README.md").exists())
         self.assertIn("airdrop-todo-snap-in", (self.repo / "manifest.yaml").read_text())
 
-    def enable_workflows(self, *workflows, owner="devrev", visibility="PRIVATE", check=True):
+    def initialize_from_origin(self, *options, owner="devrev", visibility="PRIVATE", check=True):
         origin = f"git@github.com:{owner}/airsync-demo-snap-in.git"
         git_stub = self.root / "git"
         git_stub.write_text(
@@ -76,12 +76,24 @@ class SetupTest(unittest.TestCase):
         git_stub.chmod(0o755)
         gh_stub = self.root / "gh"
         gh_stub.write_text(
-            '#!/bin/sh\n[ "$3" = "$EXPECTED_ORIGIN" ] || exit 1\nprintf "%s\\n" "$REPO_METADATA"\n'
+            """#!/bin/sh
+case "$1 $2" in
+  "repo view")
+    [ "$3" = "$EXPECTED_ORIGIN" ] || exit 1
+    printf '%s\\n' "$REPO_METADATA"
+    ;;
+  "api user")
+    [ "$3 $4" = "--jq .login" ] || exit 1
+    printf '%s\\n' 'alice'
+    ;;
+  *) exit 1 ;;
+esac
+"""
         )
         gh_stub.chmod(0o755)
         repository = {"nameWithOwner": f"{owner}/airsync-demo-snap-in", "visibility": visibility}
         return self.command(
-            "python3", str(SCRIPTS / "enable_private_workflows.py"), *workflows,
+            "python3", str(SCRIPTS / "initialize.py"), *options,
             env={
                 **os.environ,
                 "PATH": str(self.root) + os.pathsep + os.environ["PATH"],
@@ -91,37 +103,47 @@ class SetupTest(unittest.TestCase):
             check=check,
         )
 
-    def test_private_workflows_are_opt_in_and_existing_files_survive(self):
-        self.initialize("airsync-demo-snap-in")
+    def test_detects_origin_maintainer_and_devrev_team(self):
+        self.initialize_from_origin()
+        self.assertIn("slug: airsync-demo-snap-in", (self.repo / "manifest.yaml").read_text())
+        self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice @devrev/connector_team\n")
+        self.assertFalse((self.repo / ".github/workflows/claude-code-review.yml").exists())
+        self.assertFalse((self.repo / ".github/workflows/create-marketplace-submission.yml").exists())
+        self.assertFalse((self.repo / "marketplace.yaml").exists())
+
+    def test_can_omit_devrev_team(self):
+        self.initialize_from_origin("--no-owning-team")
+        self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice\n")
+
+    def test_can_override_devrev_team(self):
+        self.initialize_from_origin("--owning-team", "devrev/another-team")
+        self.assertEqual((self.repo / ".github/CODEOWNERS").read_text(), "* @alice @devrev/another-team\n")
+
+    def test_initializes_with_both_private_workflows_and_preserves_existing_files(self):
+        self.initialize_from_origin("--enable-review", "--enable-marketplace")
         workflows = self.repo / ".github/workflows"
         review = workflows / "claude-code-review.yml"
         submission = workflows / "create-marketplace-submission.yml"
         config = self.repo / "marketplace.yaml"
-        self.assertFalse(review.exists())
-        self.assertFalse(submission.exists())
-        self.assertFalse(config.exists())
-
-        self.enable_workflows("review")
+        self.assertFalse((self.repo / ".github/templates/README.md").exists())
         self.assertIn("devrev/connectors-codegen/.github/workflows/connector-review.yml", review.read_text())
-        self.assertFalse(submission.exists())
-        self.assertFalse(config.exists())
-
-        review.write_text("Existing review workflow\n")
-        self.enable_workflows("review", "marketplace")
-        self.assertEqual(review.read_text(), "Existing review workflow\n")
         self.assertIn("Create DEV draft", submission.read_text())
         self.assertIn("marketplace_listing_slug: airsync-demo-snap-in", config.read_text())
         self.assertIn("snap_in_package_slug: airsync-demo-snap-in", config.read_text())
+
+        review.write_text("Existing review workflow\n")
         config.write_text("Existing Marketplace configuration\n")
-        self.enable_workflows("marketplace")
+        self.initialize_from_origin("--enable-review", "--enable-marketplace")
+        self.assertEqual(review.read_text(), "Existing review workflow\n")
         self.assertEqual(config.read_text(), "Existing Marketplace configuration\n")
 
-    def test_rejects_public_or_external_workflow_install(self):
+    def test_rejects_workflow_selection_for_public_or_external_repositories(self):
         for owner, visibility in (("devrev", "PUBLIC"), ("external", "PRIVATE")):
             with self.subTest(owner=owner, visibility=visibility):
-                result = self.enable_workflows("review", "marketplace", owner=owner, visibility=visibility, check=False)
+                result = self.initialize_from_origin("--enable-review", owner=owner, visibility=visibility, check=False)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("require a private repository in devrev", result.stderr)
+        self.assertTrue((self.repo / ".github/templates/README.md").exists())
         self.assertFalse((self.repo / ".github/workflows/claude-code-review.yml").exists())
         self.assertFalse((self.repo / "marketplace.yaml").exists())
 
